@@ -6,7 +6,8 @@ import { execFileSync } from 'node:child_process';
 import { homedir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { SUGGEST_MODES, forgettable, forgottenPath, loadoutHome, pickItem, readActive, readForgotten, readPack, readSuggestMode, renderLoadoutMd, validate, withoutForgotten, writePack } from '../src/pack.mjs';
+import { SUGGEST_MODES, forgettable, forgottenPath, loadoutHome, nameOf, pickItem, possessive, readActive, readForgotten, readPack, readSuggestMode, renderLoadoutMd, validate, withoutForgotten, writePack } from '../src/pack.mjs';
+import { bundledSkills, copySkill, installedKit, missingKit } from '../src/kit.mjs';
 import { claudeMdDraft, dropRedacted, forPack, markIncluded, switchOff } from '../src/clean.mjs';
 
 const COUNTS = ['paths', 'secrets', 'emails', 'hosts', 'names', 'code', 'urls'];
@@ -18,6 +19,7 @@ const HELP = `loadout: work the way they work.
   loadout review [--handle maya]     open the review page for a draft
   loadout publish [--handle maya] [--out .]   write <handle>.loadout to share
   loadout use <handle|path>          load a loadout into Claude Code
+  loadout skills <handle> [--yes]    install the skills a loadout bundles; without --yes, list them
   loadout off                        stop using it
   loadout list                       loadouts on this machine
   loadout status                     which loadout is on
@@ -226,10 +228,33 @@ async function use(arg) {
     await mkdir(dest, { recursive: true });
     if (isDir && existsSync(join(source, 'README.md'))) await cp(join(source, 'README.md'), join(dest, 'README.md'));
     await writeFile(join(dest, 'loadout.json'), `${JSON.stringify(loadout, null, 2)}\n`);
+    if (isDir) for (const skill of bundledSkills(loadout, source)) copySkill(skill, join(dest, 'skills', skill.name));
   }
   const shown = await renderActive(loadout, dest);
   await writeFile(join(home, 'active.json'), `${JSON.stringify({ handle: loadout.handle, path: dest, since: new Date().toISOString() }, null, 2)}\n`);
   console.log(`Using ${loadout.handle}'s loadout: ${playbooks(shown)}.`);
+  const { lines } = missingKit(shown, installedKit(claudeDir()));
+  if (lines.length) console.log([`Missing for ${possessive(nameOf(shown))} playbooks:`, ...lines.map((l) => `  ${l}`)].join('\n'));
+}
+
+// A loadout is someone else's instructions: without --yes, only say what would be written.
+async function skills(handle, flags) {
+  if (!/^[a-z0-9][a-z0-9-]{1,30}$/.test(handle ?? '')) fail('Usage: loadout skills <handle> [--yes]');
+  const dir = join(home, 'packs', handle);
+  if (!existsSync(dir)) fail(`No loadout called "${handle}" is installed. \`loadout use\` it first.`);
+  const loadout = await readPack(dir);
+  const found = bundledSkills(loadout, dir);
+  if (!found.length) return console.log(`${loadout.handle}'s loadout bundles no skills.`);
+  for (const skill of found) {
+    const to = join(claudeDir(), 'skills', skill.name);
+    if (existsSync(to)) console.log(`Skipped ${skill.name}: ${tilde(to)} already exists.`);
+    else if (!flags.yes) console.log(`${skill.name}: ${tilde(skill.dir)} → ${tilde(to)} (${skill.files.join(', ')})`);
+    else {
+      copySkill(skill, to);
+      console.log(`Installed ${skill.name} in ${tilde(to)}`);
+    }
+  }
+  if (!flags.yes && found.some((sk) => !existsSync(join(claudeDir(), 'skills', sk.name)))) console.log(`\`loadout skills ${loadout.handle} --yes\` installs them.`);
 }
 
 const playbooks = (l) => `${plural(l.playbooks.length, 'playbook')}${l.playbooks.length ? ` (${l.playbooks.map((p) => p.name).join(', ')})` : ''}`;
@@ -403,6 +428,7 @@ async function main() {
     case 'review': return review(flags);
     case 'publish': return publish(flags);
     case 'use': return use(rest[0]);
+    case 'skills': return skills(rest[0], flags);
     case 'off': return off();
     case 'list': return list();
     case 'status': return status(flags);

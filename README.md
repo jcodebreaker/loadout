@@ -86,7 +86,7 @@ Follow these. They come from times Maya had to correct an agent.
 - **How they check work.** Their verification habits with honest rates: tests before committing, checking in the browser on UI work, asking for proof.
 - **How they open a task.** How long their first message is, whether they attach a spec or screenshot, name files, say what done looks like. Turned into guidance for the agent.
 - **Playbooks.** For each kind of task, the skills, subagents and MCP servers they reach for, in order.
-- **How they ask** and **Kit.** Phrasings they repeat, and the tools behind the playbooks, with install hints.
+- **How they ask** and **Kit.** Phrasings they repeat, and the tools behind the playbooks, with where each comes from and how to install it.
 - **Their CLAUDE.md**, redacted, only if they switch it on.
 
 ## Does it help?
@@ -107,7 +107,7 @@ The outcome was the same: the tasks were too easy to separate the arms. The proc
 
 In Claude Code, with a loadout on:
 
-- **"Use Maya's loadout."** `/loadout:use maya`. New sessions keep it until you turn it off.
+- **"Use Maya's loadout."** `/loadout:use maya`. New sessions keep it until you turn it off. It lists the plugins and skills of hers you don't have, with the lines to install them; `loadout skills maya --yes` copies the skills she bundled, after you've seen them.
 - **"That rule is wrong here, forget it."** Drops one rule, check or playbook, for you only. "Not this time" just skips it once.
 - **"Bring it back."** Lists what you forgot and restores it.
 - **"Which loadout is on?"** `/loadout:status`

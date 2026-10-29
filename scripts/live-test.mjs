@@ -176,11 +176,16 @@ const STEPS = {
   async use() {
     const home = activeHome();
     loadoutCli(home, 'off');
+    // The fixture's kit names invented plugins and a bundled skill, so `use` always prints what's missing.
+    const bundled = join(homedir(), '.claude', 'skills', 'small-diffs');
+    const hadBundled = existsSync(bundled);
     const run = await claude('use', '/loadout:use maya', home);
     summary('use', run);
     check('4', '/loadout:use maya: active.json is back', existsSync(join(home, 'active.json')), deniedShell(run).join(' | '));
     // The skill's second ! line (status --md) must see the loadout the first one just turned on.
-    check('4', '/loadout:use maya: Claude reports it loaded', has(run.text, 'maya') && !/didn.t|not on|no loadout/i.test(run.text), run.text);
+    check('4', '/loadout:use maya: Claude reports it loaded', has(run.text, 'maya') && !/didn.t load|isn.t on|is not on|no loadout/i.test(run.text), run.text);
+    check('4', '/loadout:use maya: Claude passes on the missing kit', /craft-skills|\/plugin (marketplace|install)/i.test(run.text), run.text);
+    check('4', '/loadout:use maya: no bundled skill installed without asking', hadBundled || !existsSync(bundled));
   },
 };
 

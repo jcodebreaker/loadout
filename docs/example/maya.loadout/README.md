@@ -2,7 +2,7 @@
 
 Work the way they work.
 
-Mined from 42 Claude Code sessions over 30 days. 4 rules, 4 playbooks, 3 ways of asking, 5 skills.
+Mined from 42 Claude Code sessions over 30 days. 4 rules, 4 playbooks, 3 ways of asking, 6 skills.
 
 Playbooks:
 
