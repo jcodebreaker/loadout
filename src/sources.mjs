@@ -96,6 +96,9 @@ export function skillFiles(dir, ctx = {}) {
   return files[0]?.path === 'SKILL.md' ? files : null;
 }
 
+// MCP servers Claude Code itself provides (the Chrome extension, the desktop app's browser and preview).
+const BUILTIN_MCP = new Set(['claude-in-chrome', 'Claude_Browser', 'Claude_Preview', 'computer-use']);
+
 // Adds `source` to each kit skill and MCP server (and `files` to personal skills that can be bundled, off until
 // the owner switches Bundle on). `ctx` is the redaction context: a marketplace, repo or file with a private name in it
 // is left out.
@@ -118,6 +121,7 @@ export function withSources(kit, claudeDir, ctx = {}) {
   const names = [...installed.plugins.keys()].sort((a, b) => b.length - a.length);
   const mcp = (kit.mcp ?? []).map((m) => {
     const server = String(m.server);
+    if (BUILTIN_MCP.has(server)) return { ...m, source: { kind: 'builtin' } };
     if (!server.startsWith('plugin_')) return { ...m, source: { kind: 'personal' } };
     const plugin = names.find((p) => server.startsWith(`plugin_${norm(p)}_`)) ?? /^plugin_([^_]+)_/.exec(server)?.[1];
     return { ...m, source: plugin ? pluginSource(plugin, installed, ctx) : { kind: 'personal' } };
