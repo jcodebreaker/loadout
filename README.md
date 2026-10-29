@@ -15,6 +15,10 @@ Team memory tools collect what a group knows about a codebase. A loadout is narr
 Same prompt, same repo. On the right, Maya's example loadout is on.
 
 <p align="center">
+  <img alt="Claude Code side by side. Left, plain: reads, installs a package, says done, with no tests. Right, with Maya's loadout: offers her Build a feature playbook, then runs grilling, an Explore subagent, tdd, an edit with no new dependency, and npm test with 5 passed." src="docs/img/demo.gif" width="900">
+</p>
+
+<p align="center">
   <img alt="Two columns. Plain agent: opens the reports page, adds an export button, says it's done. With Maya's loadout: grills you on the plan with grilling, explores the code with an Explore subagent, writes a failing test with tdd, edits and runs the tests, reviews the diff with code-review." src="docs/img/compare.png">
 </p>
 
