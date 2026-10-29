@@ -90,6 +90,27 @@ try {
   assert.notEqual(checkEdit(older, { ...olderEdit, rules: [] }), null);
   ok('a draft without rules or CLAUDE.md still saves toggles, and neither can be added');
 
+  const sourced = structuredClone(original);
+  sourced.kit.skills[0].source = { kind: 'personal', bundled: false };
+  sourced.kit.skills[0].files = [{ path: 'SKILL.md', text: 'x' }];
+  sourced.kit.skills[1].source = { kind: 'personal', bundled: false }; // nothing it could bundle
+  sourced.kit.skills[2].source = { kind: 'plugin', plugin: 'p', marketplace: 'm' };
+  const bundled = structuredClone(sourced);
+  bundled.kit.skills[0].source.bundled = true;
+  assert.equal(checkEdit(sourced, bundled), null);
+  for (const change of [
+    (d) => (d.kit.skills[0].source.bundled = 'yes'),
+    (d) => (d.kit.skills[0].files[0].text = 'y'),
+    (d) => (d.kit.skills[1].source.bundled = true),
+    (d) => (d.kit.skills[2].source.bundled = true),
+    (d) => (d.kit.skills[2].source.marketplace = 'other'),
+  ]) {
+    const d = structuredClone(sourced);
+    change(d);
+    assert.notEqual(checkEdit(sourced, d), null, String(change));
+  }
+  ok('Bundle switches only on a personal skill with files; sources and files are read-only');
+
   assert.match(await (await fetch(url + '/')).text(), />Close without publishing</);
   assert.equal((await post('/api/done', {})).status, 200);
   assert.deepEqual(await settled(done), { publish: true });

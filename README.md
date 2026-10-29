@@ -43,7 +43,7 @@ Ask for something like "add support for CSV export on the reports page". Claude 
 npx github:jcodebreaker/loadout build          # or: node bin/loadout.mjs build
 ```
 
-**Review.** `build` opens a local page with everything it found. Switch off what you don't want to share and rename playbooks. The top of the page shows what will leave your machine and how much was removed.
+**Review.** `build` opens a local page with everything it found. Switch off what you don't want to share and rename playbooks. The top of the page shows what will leave your machine and how much was removed. Each tool says where it comes from (its plugin and marketplace, or only your machine); switch Bundle on to ship one of your own skills, redacted, in the pack.
 
 <p align="center">
   <img alt="The review page for Maya's draft: what leaves your machine, three playbooks with their steps and include switches, how she asks, and her kit, with vercel:deploy switched off" src="docs/img/review.png" width="640">
@@ -60,6 +60,7 @@ maya.loadout/
   loadout.json    the data
   LOADOUT.md      what Claude reads
   README.md       a short card for people
+  skills/         your own skills you chose to bundle, if any
 ```
 
 `LOADOUT.md` is short and plain. From [the example](docs/example/maya.loadout/LOADOUT.md):

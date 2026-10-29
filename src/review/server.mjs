@@ -1,4 +1,4 @@
-// Local review page for a draft loadout. The owner toggles, renames playbooks and rewords rules; everything else (checks,
+// Local review page for a draft loadout. The owner toggles, bundles personal skills, renames playbooks and rewords rules; everything else (checks,
 // openings, the CLAUDE.md text) is read-only.
 // Logs only to stderr.
 import { createServer } from 'node:http';
@@ -45,6 +45,8 @@ export function checkEdit(current, next) {
       const items = list(copy);
       if (Array.isArray(items)) for (const item of items) if (item && typeof item === 'object') for (const k of keys) delete item[k];
     }
+    // A personal skill with files can be bundled.
+    for (const s of copy.kit?.skills ?? []) if (s?.source?.kind === 'personal' && s.files) delete s.source.bundled;
     return copy;
   };
   for (const [list, keys] of EDITABLE) {
@@ -56,9 +58,10 @@ export function checkEdit(current, next) {
       if ('include' in item && typeof item.include !== 'boolean') return 'include must be true or false.';
       if (keys.includes('name') && (typeof item.name !== 'string' || !item.name.trim() || item.name.length > 80)) return 'A playbook name must be 1 to 80 characters.';
       if (keys.includes('text') && (typeof item.text !== 'string' || !item.text.trim() || item.text.length > 140)) return 'A rule must be 1 to 140 characters.';
+      if (item.source?.bundled !== undefined && typeof item.source.bundled !== 'boolean') return 'bundled must be true or false.';
     }
   }
-  if (stable(strip(current)) !== stable(strip(next))) return 'Only names, rule wording and include switches can change.';
+  if (stable(strip(current)) !== stable(strip(next))) return 'Only names, rule wording, include and bundle switches can change.';
   return null;
 }
 

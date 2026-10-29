@@ -1,0 +1,23 @@
+{
+  "mattpocock": {
+    "source": {
+      "source": "github",
+      "repo": "mattpocock/skills"
+    },
+    "installLocation": "/home/demo/.claude/plugins/marketplaces/mattpocock"
+  },
+  "acme-git": {
+    "source": {
+      "source": "git",
+      "url": "https://gitlab.com/acme/claude-plugins.git"
+    },
+    "installLocation": "/home/demo/.claude/plugins/marketplaces/acme-git"
+  },
+  "claude-plugins-official": {
+    "source": {
+      "source": "github",
+      "repo": "anthropics/claude-plugins-official"
+    },
+    "installLocation": "/home/demo/.claude/plugins/marketplaces/claude-plugins-official"
+  }
+}

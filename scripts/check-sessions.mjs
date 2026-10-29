@@ -28,7 +28,7 @@ const sessionA = {
   cwdName: 'shop',
   events: [
     prompt('add a dark mode toggle to the settings page', t('09:00:00')),
-    { kind: 'skill', name: 'tdd', at: t('09:00:05') },
+    { kind: 'skill', name: 'grill-me', at: t('09:00:05') },
     { kind: 'agent', type: 'Explore', model: 'haiku', background: true, at: t('09:00:06') },
     { kind: 'agent', type: 'Plan', model: null, background: false, at: t('09:00:07') },
     { kind: 'mcp', server: 'docs_server', tool: 'search', at: t('09:00:08') },

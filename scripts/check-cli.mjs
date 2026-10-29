@@ -15,6 +15,8 @@ const fixture = JSON.parse(await readFile(fixturePath, 'utf8'));
 const home = await mkdtemp(join(tmpdir(), 'loadout-home-'));
 const claude = await mkdtemp(join(tmpdir(), 'loadout-claude-'));
 await symlink(join(root, 'fixtures', 'claude'), join(claude, 'projects'));
+// Invented plugin files and personal skills, for kit sources.
+for (const d of ['plugins', 'skills']) await symlink(join(root, 'fixtures', 'claude', d), join(claude, d));
 const env = { ...process.env, LOADOUT_HOME: home, CLAUDE_CONFIG_DIR: claude };
 
 // Doctor reads a Claude config dir with no sessions, so its lines don't depend on the fixtures' dates.
@@ -321,6 +323,18 @@ try {
       const shipped = JSON.parse(await readFile(join(out, 'demo.loadout', 'loadout.json'), 'utf8'));
       assert.deepEqual(shipped.rules.map((x) => x.from), ['memory', 'memory']);
       assert.ok(shipped.rules.every((x) => !('why' in x)));
+      // Kit sources: grill-me is only in the invented skills folder, and ships only once Bundle is switched on.
+      const d = await draft();
+      assert.deepEqual(d.kit.skills.map((x) => [x.name, x.source, x.files?.map((f) => f.path)]), [['grill-me', { kind: 'personal', bundled: false }, ['SKILL.md', 'references/checklist.md']]]);
+      assert.deepEqual(d.kit.mcp.map((x) => x.source), [{ kind: 'personal' }]);
+      assert.deepEqual(shipped.kit.skills[0].source, { kind: 'personal', bundled: false });
+      assert.ok(!existsSync(join(out, 'demo.loadout', 'skills')));
+      d.kit.skills[0].source.bundled = true;
+      await writeFile(join(home, 'drafts', 'demo.json'), JSON.stringify(d));
+      assert.equal(cli('publish', '--handle', 'demo', '--out', out).status, 0);
+      assert.deepEqual(JSON.parse(await readFile(join(out, 'demo.loadout', 'loadout.json'), 'utf8')).kit.skills[0], { name: 'grill-me', seen: 2, source: { kind: 'personal', bundled: true } });
+      assert.match(await readFile(join(out, 'demo.loadout', 'skills', 'grill-me', 'SKILL.md'), 'utf8'), /Keep notes in ‹path›/);
+      assert.ok(existsSync(join(out, 'demo.loadout', 'skills', 'grill-me', 'references', 'checklist.md')));
       await rm(out, { recursive: true, force: true });
       assert.equal(build('--no-memory').status, 0);
       assert.ok(!(await draft()).rules.some((x) => x.from === 'memory'));
