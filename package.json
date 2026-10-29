@@ -1,0 +1,10 @@
+{
+  "name": "loadout",
+  "version": "0.1.0",
+  "description": "Work the way they work: port a developer's agent workflow into your Claude Code session.",
+  "type": "module",
+  "license": "MIT",
+  "bin": { "loadout": "bin/loadout.mjs" },
+  "engines": { "node": ">=22" },
+  "scripts": { "check": "node scripts/check.mjs" }
+}

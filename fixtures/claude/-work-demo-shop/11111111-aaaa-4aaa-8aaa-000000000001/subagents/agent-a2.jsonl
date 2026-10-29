@@ -1,0 +1,2 @@
+{"parentUuid":null,"isSidechain":true,"type":"user","message":{"role":"user","content":"plan"},"uuid":"p01","timestamp":"2026-10-10T09:00:07.500Z","cwd":"/work/demo/shop"}
+{"parentUuid":"p01","isSidechain":true,"type":"assistant","message":{"model":"claude-test-opus","role":"assistant","content":[{"type":"tool_use","id":"toolu_Y1","name":"Skill","input":{"skill":"/codebase-design"}}]},"uuid":"p02","timestamp":"2026-10-10T09:00:09.000Z","cwd":"/work/demo/shop"}

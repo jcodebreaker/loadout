@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>loadout: plain agent vs Maya's loadout</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="base.css">
+<style>
+/* Same prompt twice: a plain agent, then the same agent with Maya's example loadout on. Rendered at 1200 wide. */
+.wrap { padding: 40px; display: grid; align-content: start; }
+.compare { display: grid; grid-template-columns: 1fr 1fr; }
+.compare > div { padding: 28px 30px; display: grid; gap: 16px; align-content: start; }
+.compare > div + div { border-left: 1px solid var(--rule); }
+.cmd { font: 400 14px/1.7 var(--font-mono); color: var(--ink-2); }
+.cmd b { color: var(--ink); font-weight: 500; }
+.note { font: 400 13px/1.5 var(--font-mono); color: var(--mark); }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; }
+.steps li { display: grid; grid-template-columns: 22px 1fr; gap: 12px; padding: 11px 0; border-top: 1px solid var(--rule); }
+.dot { width: 9px; height: 9px; border-radius: 50%; margin-top: 8px; background: var(--mark); }
+.plain .dot { background: var(--ink-3); }
+.steps b { font-weight: 500; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.steps b i { font: 400 12px/1 var(--font-mono); font-style: normal; color: var(--ink-3); padding: 4px 7px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); }
+.steps span { font-size: 14px; color: var(--ink-3); }
+.verdict { margin: 0; font: 400 20px/1.35 var(--font-display); }
+.plain .verdict { color: var(--ink-3); }
+.with .verdict { color: var(--mark); }
+</style>
+</head>
+<body>
+<canvas id="trails" aria-hidden="true"></canvas>
+<div class="wrap">
+  <div class="sheet compare">
+    <div class="plain">
+      <span class="label">Plain agent</span>
+      <div class="cmd"><b>&gt; add support for CSV export on the reports page</b></div>
+      <ol class="steps">
+        <li><i class="dot"></i><div><b>Opens the reports page</b><span>starts editing straight away</span></div></li>
+        <li><i class="dot"></i><div><b>Adds an export button</b><span>one file, 112 lines</span></div></li>
+        <li><i class="dot"></i><div><b>Says it's done</b><span>no plan, no tests, no review</span></div></li>
+      </ol>
+      <p class="verdict">Done, it says.</p>
+    </div>
+    <div class="with">
+      <span class="label">With Maya's loadout</span>
+      <div class="cmd"><b>&gt; /loadout:use ./maya.loadout</b><br><b>&gt; add support for CSV export on the reports page</b></div>
+      <div class="note">following Maya's loadout: Ship a feature</div>
+      <ol class="steps">
+        <li><i class="dot"></i><div><b>Grills you on the plan <i>grilling</i></b><span>which columns, date format, max rows</span></div></li>
+        <li><i class="dot"></i><div><b>Explores the code it touches <i>Explore</i></b><span>a subagent maps the reports module</span></div></li>
+        <li><i class="dot"></i><div><b>Writes a failing test first <i>tdd</i></b><span>four tests, all red</span></div></li>
+        <li><i class="dot"></i><div><b>Edits code and runs the tests</b><span>four of four passing</span></div></li>
+        <li><i class="dot"></i><div><b>Reviews the diff before committing <i>code-review</i></b><span>one finding, fixed</span></div></li>
+      </ol>
+      <p class="verdict">Done the way Maya does it.</p>
+    </div>
+  </div>
+</div>
+<script src="trails.js"></script>
+<script>drawTrails(11, 12, 0.3);</script>
+</body>
+</html>

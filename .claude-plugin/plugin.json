@@ -1,0 +1,9 @@
+{
+  "name": "loadout",
+  "description": "Work the way they work: load a developer's Claude Code workflow into your session.",
+  "author": { "name": "jcodebreaker", "url": "https://github.com/jcodebreaker" },
+  "homepage": "https://github.com/jcodebreaker/loadout",
+  "repository": "https://github.com/jcodebreaker/loadout",
+  "license": "MIT",
+  "keywords": ["workflow", "playbooks", "skills", "templates"]
+}

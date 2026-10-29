@@ -1,0 +1,2 @@
+{"parentUuid":null,"isSidechain":false,"type":"user","message":{"role":"user","content":"rename the checkout button"},"uuid":"c01","timestamp":"2026-10-20T14:00:00.000Z","promptSource":"typed","turnOrigin":"human","cwd":"/work/demo/shop"}
+{"parentUuid":"c01","isSidechain":false,"type":"assistant","message":{"model":"claude-test-1","role":"assistant","content":[{"type":"text","text":"Done."}]},"uuid":"c02","timestamp":"2026-10-20T14:00:30.000Z","cwd":"/work/demo/shop"}

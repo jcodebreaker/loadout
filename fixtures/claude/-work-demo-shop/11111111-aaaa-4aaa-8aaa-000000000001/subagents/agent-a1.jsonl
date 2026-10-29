@@ -1,0 +1,3 @@
+{"parentUuid":null,"isSidechain":true,"type":"user","message":{"role":"user","content":"look around"},"uuid":"s01","timestamp":"2026-10-10T09:00:06.500Z","cwd":"/work/demo/shop"}
+{"parentUuid":"s01","isSidechain":true,"type":"assistant","message":{"model":"claude-test-haiku","role":"assistant","content":[{"type":"tool_use","id":"toolu_X1","name":"Grep","input":{"pattern":"settings"}}]},"uuid":"s02","timestamp":"2026-10-10T09:00:07.000Z","cwd":"/work/demo/shop"}
+{"parentUuid":"s02","isSidechain":true,"type":"assistant","message":{"model":"claude-test-haiku","role":"assistant","content":[{"type":"tool_use","id":"toolu_X2","name":"Bash","input":{"command":"git -C /work/demo/shop log --oneline"}}]},"uuid":"s03","timestamp":"2026-10-10T09:00:08.000Z","cwd":"/work/demo/shop"}

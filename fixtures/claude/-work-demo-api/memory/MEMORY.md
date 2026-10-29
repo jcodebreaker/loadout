@@ -1,0 +1,2 @@
+- [Offline tests](feedback-offline-tests.md) — tests never hit the network
+- [Comments](feedback-no-restating-comments.md) — say why, not what

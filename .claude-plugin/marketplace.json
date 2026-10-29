@@ -1,0 +1,12 @@
+{
+  "name": "loadout",
+  "description": "Work the way they work.",
+  "owner": { "name": "jcodebreaker", "url": "https://github.com/jcodebreaker" },
+  "plugins": [
+    {
+      "name": "loadout",
+      "source": "./",
+      "description": "Load a developer's Claude Code workflow into your session."
+    }
+  ]
+}

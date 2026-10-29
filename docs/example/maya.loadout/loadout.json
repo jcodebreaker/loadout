@@ -1,0 +1,238 @@
+{
+  "handle": "maya",
+  "displayName": "Maya",
+  "version": 1,
+  "builtAt": "2026-10-01T09:00:00.000Z",
+  "rules": [
+    {
+      "id": "no-restating-comments",
+      "text": "Don't add comments that restate the code",
+      "seen": 7,
+      "from": "correction"
+    },
+    {
+      "id": "run-your-test-first",
+      "text": "Run the test you wrote before you edit anything else",
+      "seen": 5,
+      "from": "interrupt"
+    },
+    {
+      "id": "ask-before-dependency",
+      "text": "Ask before adding a dependency",
+      "seen": 4,
+      "from": "denied"
+    },
+    {
+      "id": "keep-diff-small",
+      "text": "Only change what the task needs, no drive-by refactors",
+      "seen": 3,
+      "from": "correction"
+    }
+  ],
+  "checks": [
+    {
+      "id": "tests-before-commit",
+      "text": "Runs the tests after the last edit and before committing",
+      "rate": 0.7,
+      "of": 10,
+      "when": "feature"
+    },
+    {
+      "id": "browser-on-bug",
+      "text": "Opens the app in the browser to confirm the fix",
+      "rate": 0.44,
+      "of": 9,
+      "when": "bug"
+    },
+    {
+      "id": "asks-for-proof",
+      "text": "Asks for proof that it works",
+      "rate": 0.32,
+      "of": 31,
+      "when": "any"
+    }
+  ],
+  "openings": {
+    "medianWords": 14,
+    "withAttachment": 0.12,
+    "namesFiles": 0.23,
+    "definesDone": 0.19,
+    "usesPlanFirst": 0.1
+  },
+  "playbooks": [
+    {
+      "id": "feature",
+      "name": "Build a feature",
+      "when": "Building or adding a feature.",
+      "trigger": [
+        "add",
+        "support",
+        "build",
+        "feature"
+      ],
+      "steps": [
+        {
+          "do": "Spins up an Explore sub-agent",
+          "uses": "agent:Explore"
+        },
+        {
+          "do": "Uses the tdd skill",
+          "uses": "tdd"
+        },
+        {
+          "do": "Edits code"
+        },
+        {
+          "do": "Runs tests"
+        },
+        {
+          "do": "Commits"
+        }
+      ],
+      "seen": 14
+    },
+    {
+      "id": "bug",
+      "name": "Fix a bug",
+      "when": "Fixing a bug, an error or a failing test.",
+      "trigger": [
+        "fix",
+        "failing",
+        "broken",
+        "error"
+      ],
+      "steps": [
+        {
+          "do": "Uses the diagnosing-bugs skill",
+          "uses": "diagnosing-bugs"
+        },
+        {
+          "do": "Edits code"
+        },
+        {
+          "do": "Runs tests"
+        },
+        {
+          "do": "Uses playwright (MCP)",
+          "uses": "mcp:playwright"
+        }
+      ],
+      "seen": 9
+    },
+    {
+      "id": "idea",
+      "name": "New idea or plan",
+      "when": "Starting from a new idea, a plan or a concept.",
+      "trigger": [
+        "grill",
+        "idea",
+        "plan"
+      ],
+      "steps": [
+        {
+          "do": "Uses the grilling skill",
+          "uses": "grilling"
+        },
+        {
+          "do": "Spins up an Explore sub-agent",
+          "uses": "agent:Explore"
+        }
+      ],
+      "seen": 7
+    },
+    {
+      "id": "review",
+      "name": "Review",
+      "when": "Reviewing code or a pull request.",
+      "trigger": [
+        "review",
+        "pr",
+        "diff"
+      ],
+      "steps": [
+        {
+          "do": "Spins up a general-purpose sub-agent",
+          "uses": "agent:general-purpose"
+        },
+        {
+          "do": "Uses the code-review skill",
+          "uses": "code-review"
+        }
+      ],
+      "seen": 5
+    }
+  ],
+  "patterns": [
+    {
+      "text": "grill me on this before you write any code",
+      "seen": 11
+    },
+    {
+      "text": "keep it simple, no new abstractions",
+      "seen": 7
+    },
+    {
+      "text": "what would you remove?",
+      "seen": 4
+    }
+  ],
+  "kit": {
+    "skills": [
+      {
+        "name": "grilling",
+        "seen": 12
+      },
+      {
+        "name": "tdd",
+        "seen": 8
+      },
+      {
+        "name": "code-review",
+        "seen": 6
+      },
+      {
+        "name": "diagnosing-bugs",
+        "seen": 5
+      },
+      {
+        "name": "vercel:deploy",
+        "seen": 2
+      }
+    ],
+    "mcp": [
+      {
+        "server": "playwright",
+        "seen": 6
+      }
+    ],
+    "agents": {
+      "share": 0.4,
+      "types": [
+        "Explore",
+        "general-purpose"
+      ],
+      "models": [
+        "sonnet"
+      ]
+    }
+  },
+  "claudeMd": {
+    "text": "- Use pnpm, not npm.\n- Prefer early returns over nested ifs.\n- Never commit .env files.\n"
+  },
+  "stats": {
+    "sessions": 42,
+    "days": 30,
+    "prompts": 310,
+    "skills": 28,
+    "subagents": 17
+  },
+  "removed": {
+    "paths": 120,
+    "secrets": 2,
+    "emails": 3,
+    "hosts": 5,
+    "names": 9,
+    "code": 40,
+    "urls": 11
+  }
+}

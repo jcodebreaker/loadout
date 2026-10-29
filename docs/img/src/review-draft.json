@@ -1,0 +1,167 @@
+{
+  "handle": "maya",
+  "displayName": "Maya",
+  "version": 1,
+  "builtAt": "2026-10-01T09:00:00.000Z",
+  "playbooks": [
+    {
+      "id": "ship-feature",
+      "name": "Ship a feature",
+      "when": "Building something new from a short idea",
+      "trigger": [
+        "add",
+        "build",
+        "feature",
+        "support"
+      ],
+      "steps": [
+        {
+          "do": "Grill the idea until the plan is settled",
+          "uses": "grilling"
+        },
+        {
+          "do": "Explore the code the change touches",
+          "uses": "Explore"
+        },
+        {
+          "do": "Write a failing test first",
+          "uses": "tdd"
+        },
+        {
+          "do": "Edit code and run the tests"
+        },
+        {
+          "do": "Review the diff before committing",
+          "uses": "code-review"
+        }
+      ],
+      "seen": 14,
+      "include": true
+    },
+    {
+      "id": "fix-bug",
+      "name": "Fix a bug",
+      "when": "Something is broken, throwing or slow",
+      "trigger": [
+        "fix",
+        "bug",
+        "broken",
+        "error",
+        "failing"
+      ],
+      "steps": [
+        {
+          "do": "Reproduce it and find the cause",
+          "uses": "diagnosing-bugs"
+        },
+        {
+          "do": "Check the running app in the browser",
+          "uses": "playwright"
+        },
+        {
+          "do": "Edit code and run the tests"
+        },
+        {
+          "do": "Commit with a short message"
+        }
+      ],
+      "seen": 9,
+      "include": true
+    },
+    {
+      "id": "review-pr",
+      "name": "Review a pull request",
+      "when": "Reading someone else's change",
+      "trigger": [
+        "review",
+        "pr",
+        "pull"
+      ],
+      "steps": [
+        {
+          "do": "Read the diff in a background subagent",
+          "uses": "general-purpose"
+        },
+        {
+          "do": "Summarize findings by severity"
+        }
+      ],
+      "seen": 5,
+      "include": true
+    }
+  ],
+  "patterns": [
+    {
+      "text": "grill me on this before you write any code",
+      "seen": 11,
+      "include": true
+    },
+    {
+      "text": "keep it simple, no new abstractions",
+      "seen": 7,
+      "include": true
+    },
+    {
+      "text": "what would you remove?",
+      "seen": 4,
+      "include": true
+    }
+  ],
+  "kit": {
+    "skills": [
+      {
+        "name": "grilling",
+        "seen": 12,
+        "include": true
+      },
+      {
+        "name": "tdd",
+        "seen": 8,
+        "include": true
+      },
+      {
+        "name": "code-review",
+        "seen": 6,
+        "include": true
+      },
+      {
+        "name": "vercel:deploy",
+        "seen": 2,
+        "include": false
+      }
+    ],
+    "mcp": [
+      {
+        "server": "playwright",
+        "seen": 6,
+        "include": true
+      }
+    ],
+    "agents": {
+      "share": 0.4,
+      "types": [
+        "Explore",
+        "general-purpose"
+      ],
+      "models": [
+        "sonnet"
+      ]
+    }
+  },
+  "stats": {
+    "sessions": 42,
+    "days": 30,
+    "prompts": 310,
+    "skills": 28,
+    "subagents": 17
+  },
+  "removed": {
+    "paths": 120,
+    "secrets": 2,
+    "emails": 3,
+    "hosts": 5,
+    "names": 9,
+    "code": 40,
+    "urls": 11
+  }
+}

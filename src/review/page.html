@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Review your loadout</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400&family=Geist:wght@400;500&family=Geist+Mono:wght@400&display=swap">
+<style>
+/* Calm review page in the spirit of quiet product sites: grey-green paper with faint contour lines, big serif with a
+   green ending, soft white cards with hairlines, agent steps as grey rows, the owner's words as green bubbles. */
+:root {
+  --paper: oklch(96.3% 0.006 160);
+  --card: oklch(98.8% 0.003 160 / 0.82);
+  --card-solid: oklch(99% 0.003 160);
+  --line: oklch(88.5% 0.008 160);
+  --ink: oklch(22% 0.012 160);
+  --ink-2: oklch(46% 0.01 160);
+  --ink-3: oklch(62% 0.008 160);
+  --green: oklch(47% 0.09 152);
+  --bubble: oklch(89% 0.03 152);
+  --cta: oklch(23% 0.03 160);
+  --cta-ink: oklch(97% 0.004 160);
+  --contour: oklch(70% 0.01 160);
+  --font-display: "Source Serif 4", "Iowan Old Style", Georgia, serif;
+  --font: "Geist", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --mono: "Geist Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root {
+  --paper: oklch(17% 0.008 160); --card: oklch(21% 0.01 160 / 0.85); --card-solid: oklch(21% 0.01 160); --line: oklch(30% 0.01 160);
+  --ink: oklch(94% 0.006 160); --ink-2: oklch(74% 0.01 160); --ink-3: oklch(58% 0.01 160); --green: oklch(74% 0.1 152);
+  --bubble: oklch(32% 0.04 152); --cta: oklch(90% 0.03 152); --cta-ink: oklch(18% 0.02 160); --contour: oklch(36% 0.01 160); color-scheme: dark; } }
+
+* { box-sizing: border-box; }
+html, body { margin: 0; overflow-x: clip; }
+body { background: var(--paper); color: var(--ink); font: 400 15px/1.55 var(--font); -webkit-font-smoothing: antialiased; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; border: 0; background: none; padding: 0; }
+:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; border-radius: 8px; }
+#contours { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.wrap { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding-bottom: 96px; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+
+/* nav */
+.nav { position: sticky; top: 0; z-index: 5; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; padding: 16px 0; }
+.nav::before { content: ""; position: absolute; inset: 0 -100vw; background: oklch(from var(--paper) l c h / 0.85); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); z-index: -1; }
+.logo { display: flex; align-items: center; gap: 8px; font: 500 15px/1 var(--font); }
+.logo svg { width: 20px; height: 20px; }
+.pill { display: inline-flex; gap: 2px; padding: 4px; border: 1px solid var(--line); border-radius: 12px; background: var(--card); }
+.pill a { padding: 7px 14px; border-radius: 9px; font-size: 14px; color: var(--ink); text-decoration: none; white-space: nowrap; }
+.pill a:hover { background: var(--paper); }
+.acts { justify-self: end; display: flex; align-items: center; gap: 16px; }
+.acts .quiet { font-size: 14px; color: var(--ink); white-space: nowrap; }
+.btn { background: var(--cta); color: var(--cta-ink); padding: 10px 16px; border-radius: 6px; font-size: 14px; font-weight: 500; white-space: nowrap; }
+.btn:disabled, .quiet:disabled { opacity: 0.5; cursor: default; }
+.status { font-size: 13px; color: var(--ink-3); white-space: nowrap; }
+.status.err { color: oklch(55% 0.17 25); }
+
+/* hero */
+.hero { text-align: center; padding: 120px 0 72px; display: grid; justify-items: center; gap: 18px; }
+.hero h1 { margin: 0; font: 400 clamp(44px, 7vw, 84px)/1.02 var(--font-display); letter-spacing: -0.02em; text-wrap: balance; }
+.hero h1 em, .h2 em { font-style: normal; color: var(--green); }
+.hero p { margin: 0; color: var(--ink-2); font-size: 18px; max-width: 46ch; text-wrap: balance; }
+.meta { font-size: 13.5px; color: var(--ink-3); }
+
+/* sections */
+section { padding-top: 96px; scroll-margin-top: 80px; }
+.h2 { margin: 0 0 28px; font: 400 clamp(34px, 4.6vw, 54px)/1.05 var(--font-display); letter-spacing: -0.02em; }
+.sub { margin: -16px 0 28px; color: var(--ink-2); font-size: 16.5px; max-width: 52ch; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; backdrop-filter: blur(4px); }
+
+/* numbers */
+.numbers { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+.num { padding: 36px 32px; display: grid; gap: 6px; }
+.num + .num { border-left: 1px solid var(--line); }
+.num b { font: 400 clamp(52px, 6vw, 76px)/1 var(--font-display); color: var(--green); font-variant-numeric: tabular-nums; }
+.num span { color: var(--ink-2); font-size: 15.5px; }
+.num b small { font-size: 0.42em; letter-spacing: 0; }
+.removed { display: flex; flex-wrap: wrap; gap: 8px 22px; padding: 18px 32px; border-top: 1px solid var(--line); color: var(--ink-3); font-size: 14px; }
+.removed b { color: var(--ink); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+/* rules: the corrections log, the loudest section */
+.rules { overflow: hidden; }
+.rule { display: flex; align-items: center; gap: 20px; padding: 22px 28px; transition: opacity .2s; }
+.rule + .rule { border-top: 1px solid var(--line); }
+.rule.off { opacity: 0.4; }
+.rule div { flex: 1; min-width: 0; display: grid; gap: 8px; }
+.rule-text { field-sizing: content; resize: none; overflow: hidden; width: 100%; min-width: 0; margin: 0; padding: 2px 0; border: 0; border-bottom: 1px solid transparent; background: none; color: inherit; font: 400 clamp(21px, 2.4vw, 26px)/1.25 var(--font-display); letter-spacing: -0.01em; }
+.rule-text:hover { border-bottom-color: var(--line); }
+.rule-text:focus-visible { outline: none; border-bottom-color: var(--green); }
+.once-h { margin: 28px 0 12px; font-size: 15px; font-weight: 500; color: var(--ink-2); }
+.rule small { color: var(--ink-3); font-size: 13px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.rule .why { margin: 0; color: var(--ink-2); font-size: 14px; line-height: 1.45; }
+.tag { font: 400 12px/1 var(--mono); color: var(--ink-2); border: 1px solid var(--line); padding: 4px 7px; border-radius: 6px; }
+
+/* checks */
+.checks { padding: 8px 28px; }
+.check { display: grid; grid-template-columns: minmax(0, 1fr) minmax(120px, 260px) auto; align-items: center; gap: 12px 24px; padding: 18px 0; }
+.check + .check { border-top: 1px solid var(--line); }
+.check b { font-weight: 400; font-size: 16px; }
+.bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.bar i { display: block; height: 100%; border-radius: 3px; background: var(--green); }
+.check span { color: var(--ink-3); font-size: 13.5px; font-variant-numeric: tabular-nums; white-space: nowrap; min-width: 18ch; text-align: right; }
+
+/* claude.md */
+.md-h { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+.md-h b { flex: 1; font: 500 14.5px/1.3 var(--font); }
+.md-h small { font-size: 12.5px; color: var(--ink-3); }
+.md pre { margin: 0; padding: 20px 22px; font: 400 13px/1.6 var(--mono); color: var(--ink-2); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 11.5em; overflow: hidden; mask-image: linear-gradient(to bottom, #000 60%, transparent); }
+.md.open pre { max-height: none; mask-image: none; }
+.md.off pre { opacity: 0.55; }
+.md-more { display: block; width: 100%; padding: 12px; border-top: 1px solid var(--line); font-size: 13.5px; color: var(--ink-2); }
+.md-more:hover { color: var(--ink); }
+.md-note { margin-top: 14px; color: var(--ink-3); font-size: 14px; }
+
+/* playbooks */
+.pbs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.pb { display: grid; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; transition: opacity .2s; }
+.pb.off { opacity: 0.5; }
+.pb-h { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+.pb-h input.name { flex: 1; min-width: 0; text-align: center; background: none; border: 0; padding: 2px 6px; border-radius: 6px; font: 500 14.5px/1.3 var(--font); }
+.pb-h input.name:hover { background: var(--paper); }
+.pb-h small { font-size: 12.5px; color: var(--ink-3); white-space: nowrap; }
+.pb-b { padding: 20px 22px 24px; display: grid; gap: 14px; align-content: start; }
+.bubble { justify-self: end; max-width: 85%; background: var(--bubble); color: var(--ink); padding: 11px 18px; border-radius: 22px; font-size: 15px; }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.steps li { color: var(--ink-2); font-size: 15px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.steps li::after { content: "›"; color: var(--ink-3); }
+.steps li code { font: 400 12.5px/1 var(--mono); color: var(--green); background: oklch(from var(--green) l c h / 0.09); padding: 4px 7px; border-radius: 6px; }
+
+/* how you ask */
+.asks { display: grid; gap: 12px; padding: 28px; }
+.ask { display: flex; align-items: center; justify-content: flex-end; gap: 14px; transition: opacity .2s; }
+.ask.off { opacity: 0.4; }
+.ask .bubble { justify-self: auto; }
+.ask small { color: var(--ink-3); font-size: 12.5px; white-space: nowrap; }
+
+/* kit grid */
+.kit { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); overflow: hidden; }
+.tool { min-height: 112px; display: grid; place-content: center; gap: 6px; text-align: center; padding: 18px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); margin: 0 -1px -1px 0; transition: opacity .2s; }
+.tool[aria-pressed="false"] { opacity: 0.35; }
+.tool[aria-pressed="false"] b { text-decoration: line-through; }
+.tool b { font: 500 16px/1.25 var(--font); overflow-wrap: anywhere; }
+.tool span { font: 400 12px/1 var(--mono); color: var(--ink-3); }
+.agents { margin-top: 14px; color: var(--ink-2); font-size: 15px; }
+
+/* switch */
+.sw { position: relative; width: 34px; height: 20px; flex: none; }
+.sw input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.sw i { position: absolute; inset: 0; border-radius: 10px; background: var(--line); transition: background .15s; pointer-events: none; }
+.sw i::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--card-solid); box-shadow: 0 1px 2px oklch(0% 0 0 / 0.2); transition: transform .15s; }
+.sw input:checked + i { background: var(--green); }
+.sw input:checked + i::after { transform: translateX(14px); }
+.sw input:focus-visible + i { outline: 2px solid var(--green); outline-offset: 2px; }
+
+.end { text-align: center; padding-top: 110px; display: grid; justify-items: center; gap: 18px; }
+.end p { margin: 0; color: var(--ink-2); }
+
+@media (max-width: 1080px) { .nav { grid-template-columns: 1fr auto; } .pill { display: none; } }
+@media (max-width: 860px) {
+  .numbers { grid-auto-flow: row; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .num:nth-child(odd) { border-left: 0; }
+  .num:nth-child(n+3) { border-top: 1px solid var(--line); }
+  .num:last-child:nth-child(odd) { grid-column: span 2; }
+  .check { grid-template-columns: minmax(0, 1fr) auto; }
+  .check .bar { grid-column: 1 / -1; grid-row: 2; }
+  .check span { min-width: 0; }
+  .rule { padding: 18px 20px; gap: 14px; }
+  .checks { padding: 4px 20px; }
+  .pbs { grid-template-columns: minmax(0, 1fr); }
+  .hero { padding-top: 64px; }
+}
+@media (max-width: 480px) { .acts .quiet { display: none; } .num { padding: 24px 18px; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<canvas id="contours" aria-hidden="true"></canvas>
+<div class="wrap">
+  <nav class="nav" aria-label="Review">
+    <span class="logo"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 15 C7 15, 7 5, 11 5 S 16 11, 18 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="2.5" cy="15" r="2" fill="currentColor"/><circle cx="17.5" cy="11" r="2" fill="currentColor"/></svg>loadout</span>
+    <span class="pill"><a href="#leaves">What leaves</a><a href="#rules">Rules</a><a href="#checks">Checks</a><a href="#start">Starting</a><a href="#playbooks">Playbooks</a><a href="#ask">Asking</a><a href="#kit">Kit</a><a href="#claude-md">Instructions</a></span>
+    <span class="acts"><span class="status" id="status" role="status" aria-live="polite"></span><button type="button" class="quiet" id="close">Close without publishing</button><button type="button" class="btn" id="done">Publish</button><button type="button" id="save" hidden>Save</button></span>
+  </nav>
+
+  <header class="hero">
+    <h1 id="headline">This is how <em>you work.</em></h1>
+    <p>Loadout read your sessions on this machine and wrote down the paths you keep taking. Check it, switch off anything, then publish.</p>
+    <span class="meta" id="meta"></span>
+  </header>
+
+  <section id="leaves" aria-labelledby="h-leaves">
+    <h2 class="h2" id="h-leaves">Only this <em>leaves.</em></h2>
+    <div class="card">
+      <div class="numbers" id="numbers"></div>
+      <div class="removed" id="removed"></div>
+    </div>
+  </section>
+
+  <section id="rules" aria-labelledby="h-rules">
+    <h2 class="h2" id="h-rules">What you keep <em>telling Claude.</em></h2>
+    <p class="sub">Corrections you made in more than one session, and the ones Claude saved to memory. Claude will follow them from the start.</p>
+    <div class="card rules" id="rule-list"></div>
+    <div id="once" hidden>
+      <h3 class="once-h">Said once</h3>
+      <p class="sub">Not a habit yet. Switch on the ones that are, and fix the wording.</p>
+      <div class="card rules" id="once-list"></div>
+    </div>
+  </section>
+
+  <section id="checks" aria-labelledby="h-checks">
+    <h2 class="h2" id="h-checks">How you check your <em>work.</em></h2>
+    <div class="card checks" id="check-list"></div>
+  </section>
+
+  <section id="start" aria-labelledby="h-start">
+    <h2 class="h2" id="h-start">How you start a <em>task.</em></h2>
+    <div class="card numbers" id="openings"></div>
+  </section>
+
+  <section id="playbooks" aria-labelledby="h-pb">
+    <h2 class="h2" id="h-pb">Your <em>playbooks.</em></h2>
+    <p class="sub">For each kind of task, what you reach for and in what order. Rename them so they read like you.</p>
+    <div class="pbs" id="pbs"></div>
+  </section>
+
+  <section id="ask" aria-labelledby="h-ask">
+    <h2 class="h2" id="h-ask">How you <em>ask.</em></h2>
+    <p class="sub">Things you say again and again. Claude will check in the same way.</p>
+    <div class="card asks" id="asks"></div>
+  </section>
+
+  <section id="kit" aria-labelledby="h-kit">
+    <h2 class="h2" id="h-kit">What you <em>reach for.</em></h2>
+    <p class="sub">Tap a tool to leave it out.</p>
+    <div class="card kit" id="tools"></div>
+    <p class="agents" id="agents"></p>
+  </section>
+
+  <section id="claude-md" aria-labelledby="h-md">
+    <h2 class="h2" id="h-md">Your standing <em>instructions.</em></h2>
+    <p class="sub">What Claude reads at the start of every session on this machine, from your CLAUDE.md. Off unless you share it.</p>
+    <div class="card md off" id="md" data-row="claudeMd-0"></div>
+  </section>
+
+  <div class="end">
+    <h2 class="h2" style="margin:0">Looks like <em>you?</em></h2>
+    <p>Publishing writes a folder on your machine. Nothing is uploaded.</p>
+    <button type="button" class="btn" id="done2">Publish my loadout</button>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+const on = (x) => x.include !== false;
+let draft = null, timer = null;
+
+/* Faint contour lines, drawn once: nested wobbly rings around a few centres. */
+function contours() {
+  const cv = $("contours"), ctx = cv.getContext("2d"), dpr = devicePixelRatio || 1, w = innerWidth, h = innerHeight;
+  cv.width = w * dpr; cv.height = h * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
+  ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--contour").trim(); ctx.lineWidth = 0.8;
+  let seed = 11; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const centres = [[0.12, 0.78], [0.86, 0.72], [0.5, 1.05], [0.95, 0.2]];
+  for (const [cx, cy] of centres) {
+    const ph = [rnd() * 6, rnd() * 6, rnd() * 6];
+    for (let k = 1; k <= 9; k++) {
+      const r = k * Math.min(w, h) * 0.055;
+      ctx.globalAlpha = 0.18 + 0.25 * (1 - k / 10);
+      ctx.beginPath();
+      for (let a = 0; a <= Math.PI * 2 + 0.01; a += 0.05) {
+        const rr = r * (1 + 0.18 * Math.sin(3 * a + ph[0] + k * 0.3) + 0.09 * Math.sin(5 * a + ph[1]) + 0.05 * Math.sin(9 * a + ph[2]));
+        const x = cx * w + Math.cos(a) * rr * 1.5, y = cy * h + Math.sin(a) * rr;
+        a === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+contours(); addEventListener("resize", contours);
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", contours);
+
+const sw = (key, i, item, label) => `<label class="sw"><input type="checkbox" role="switch" data-key="${key}" data-i="${i}" ${on(item) ? "checked" : ""} aria-label="Include ${esc(label)}"><i></i></label>`;
+const list = (key) => (key === "skills" || key === "mcp" ? draft.kit[key] : key === "claudeMd" ? [draft.claudeMd] : draft[key]);
+const pct = (r) => `${Math.round(r * 100)}%`;
+const FROM = { correction: "correction", interrupt: "interrupt", denied: "denied" };
+const WHEN = { feature: "feature tasks", bug: "bug fixes", design: "design tasks", any: "tasks" };
+/* Hide a section, and its nav link, when the draft has nothing for it. */
+const show = (id, yes) => { $(id).hidden = !yes; document.querySelector(`.pill a[href="#${id}"]`).hidden = !yes; };
+const short = (u) => String(u).replace(/^agent:|^mcp:/, "").replace(/^[\w-]+:(?=[\w-])/, "");
+/* "5 sessions · last Oct 12". */
+const day = (d) => new Date(`${d}T00:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+const seen = (x, n = x.sessions) => `${n === 1 ? "one session" : `${n} sessions`}${x.lastSeen ? ` · last ${day(x.lastSeen)}` : ""}`;
+const ruleSeen = (r) => (r.from === "memory" ? `from memory${r.sessions ? ` · ${seen(r)}` : ""}` : seen(r, r.sessions ?? r.seen));
+const habit = (r) => r.seen !== 1 || r.from === "memory";
+const sample = (p) => {
+  const t = (p.trigger || []).slice(0, 2);
+  return t.length ? t.join(" · ") : p.name.toLowerCase();
+};
+
+function renderNumbers() {
+  const tools = draft.kit.skills.filter(on).length + draft.kit.mcp.filter(on).length;
+  const rows = [[draft.rules.filter(on).length, "rules"], [draft.playbooks.filter(on).length, "playbooks"], [draft.patterns.filter(on).length, "ways you ask"], [tools, "tools"]];
+  $("numbers").innerHTML = rows.map(([n, l]) => `<div class="num"><b>${n}</b><span>${l}</span></div>`).join("");
+  const r = draft.removed || {};
+  const parts = [["paths", "paths"], ["secrets", "secrets"], ["emails", "emails"], ["hosts", "hosts"], ["names", "names"], ["code", "code blocks"], ["urls", "links"]].filter(([k]) => r[k]);
+  $("removed").innerHTML = parts.length ? `<span>Removed before anything else:</span>${parts.map(([k, l]) => `<span><b>${r[k]}</b> ${l}</span>`).join("")}` : "<span>Nothing needed removing.</span>";
+}
+
+function render() {
+  const s = draft.stats || {};
+  $("meta").textContent = `${draft.displayName || draft.handle} · ${s.sessions ?? 0} sessions over ${s.days ?? 0} days`;
+  renderNumbers();
+  const ruleRow = (r, i) => `
+    <div class="rule ${on(r) ? "" : "off"}" data-row="rules-${i}"><div><textarea class="rule-text" data-i="${i}" rows="1" aria-label="Rule" maxlength="140">${esc(r.text)}</textarea><small>${ruleSeen(r)}${FROM[r.from] ? `<span class="tag">${FROM[r.from]}</span>` : ""}</small>${r.why ? `<p class="why">${esc(r.why)}</p>` : ""}</div>${sw("rules", i, r, r.text)}</div>`;
+  const rows = draft.rules.map((r, i) => [r, i]);
+  $("rule-list").innerHTML = rows.filter(([r]) => habit(r)).map(([r, i]) => ruleRow(r, i)).join("")
+    || '<p class="sub" style="margin:0;padding:22px 28px">Nothing yet. Rules show up once you correct the same thing in two sessions.</p>';
+  const once = rows.filter(([r]) => !habit(r));
+  $("once").hidden = !once.length;
+  $("once-list").innerHTML = once.map(([r, i]) => ruleRow(r, i)).join("");
+  show("checks", draft.checks.length > 0);
+  $("check-list").innerHTML = draft.checks.map((c) => {
+    const n = Math.round(c.rate * c.of);
+    return `<div class="check"><b>${esc(c.text)}</b><div class="bar" role="img" aria-label="${n} of ${c.of}"><i style="width:${pct(c.rate)}"></i></div><span>${n} of ${c.of} ${WHEN[c.when] || "tasks"}</span></div>`;
+  }).join("");
+  const o = draft.openings;
+  show("start", !!o);
+  if (o) $("openings").innerHTML = [
+    [o.medianWords, " words", "in a typical first message"],
+    [pct(o.withAttachment), "", "come with a screenshot or spec"],
+    [pct(o.namesFiles), "", "name the file to start in"],
+    [pct(o.definesDone), "", "say what done looks like"],
+  ].filter(([v]) => v != null && v !== "NaN%").map(([v, unit, line]) => `<div class="num"><b>${v}${unit ? `<small>${unit}</small>` : ""}</b><span>${line}</span></div>`).join("");
+  const md = draft.claudeMd;
+  show("claude-md", !!md);
+  if (md) {
+    const lines = md.text.trimEnd().split("\n").length;
+    $("md").innerHTML = `<div class="md-h">${sw("claudeMd", 0, md, "your CLAUDE.md")}<b>CLAUDE.md</b><small>${lines} lines</small></div><pre>${esc(md.text.trimEnd())}</pre>${lines > 7 ? '<button type="button" class="md-more" aria-expanded="false">Show all</button>' : ""}`;
+    $("md").classList.toggle("off", !on(md));
+  }
+  $("pbs").innerHTML = draft.playbooks.map((p, i) => `
+    <article class="card pb ${on(p) ? "" : "off"}" data-row="playbooks-${i}">
+      <div class="pb-h">${sw("playbooks", i, p, p.name)}<input class="name" data-i="${i}" value="${esc(p.name)}" aria-label="Playbook name" maxlength="80"><small>${p.sessions ? seen(p) : `${p.seen}×`}</small></div>
+      <div class="pb-b">
+        <span class="bubble">${esc(sample(p))}</span>
+        <ul class="steps">${(p.steps || []).map((st) => {
+          if (!st.uses) return `<li>${esc(st.do)}</li>`;
+          // Say the action once and let the tag carry the name: "Uses the grilling skill" → "Uses `grilling`".
+          const name = short(st.uses);
+          const verb = st.do.replace(new RegExp(`\\s*(the |an? )?${name.replace(/[-]/g, "\\-")}(\\s+(skill|sub-agent|\\(MCP\\)))?`, "i"), "").replace(/\s+(skill|sub-agent|\(MCP\))$/i, "").trim() || "Uses";
+          return `<li>${esc(verb)} <code>${esc(name)}</code></li>`;
+        }).join("")}</ul>
+      </div>
+    </article>`).join("");
+  $("asks").innerHTML = draft.patterns.map((p, i) => `
+    <div class="ask ${on(p) ? "" : "off"}" data-row="patterns-${i}"><small>${seen(p, p.sessions ?? p.seen)}</small><span class="bubble">${esc(p.text)}</span>${sw("patterns", i, p, p.text)}</div>`).join("") || '<p class="sub" style="margin:0">No repeated phrases yet.</p>';
+  const tools = [...draft.kit.skills.map((k, i) => ["skills", i, k, k.name]), ...draft.kit.mcp.map((k, i) => ["mcp", i, k, k.server])];
+  $("tools").innerHTML = tools.map(([key, i, k, label]) => `<button type="button" class="tool" data-key="${key}" data-i="${i}" aria-pressed="${on(k)}"><b>${esc(short(label))}</b><span>${key === "mcp" ? "MCP" : "skill"} · ${k.seen ?? ""} sessions</span></button>`).join("");
+  const a = draft.kit.agents || {};
+  $("agents").textContent = a.share ? `You bring in sub-agents in ${Math.round(a.share * 100)}% of sessions, mostly ${(a.types || []).slice(0, 3).join(", ")}.` : "";
+}
+
+async function save() {
+  clearTimeout(timer);
+  try {
+    const r = await fetch("/api/draft", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(draft) });
+    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || "Could not save");
+    note("Saved");
+    return true;
+  } catch (err) { note(err.message, true); return false; }
+}
+const later = () => { clearTimeout(timer); timer = setTimeout(save, 500); };
+function note(text, err = false) {
+  const el = $("status");
+  el.textContent = text; el.classList.toggle("err", err);
+  if (!err) setTimeout(() => el.textContent === text && (el.textContent = ""), 1800);
+}
+
+document.addEventListener("change", (e) => {
+  const t = e.target;
+  if (!t.matches("input[role=switch]")) return;
+  list(t.dataset.key)[t.dataset.i].include = t.checked;
+  document.querySelector(`[data-row="${t.dataset.key}-${t.dataset.i}"]`)?.classList.toggle("off", !t.checked);
+  renderNumbers(); later();
+});
+document.addEventListener("click", (e) => {
+  const more = e.target.closest(".md-more");
+  if (more) {
+    const open = $("md").classList.toggle("open");
+    more.setAttribute("aria-expanded", open); more.textContent = open ? "Show less" : "Show all";
+    return;
+  }
+  const t = e.target.closest(".tool");
+  if (!t) return;
+  const item = list(t.dataset.key)[t.dataset.i];
+  item.include = !on(item);
+  t.setAttribute("aria-pressed", item.include);
+  renderNumbers(); later();
+});
+document.addEventListener("input", (e) => { if (e.target.matches(".rule-text")) { draft.rules[e.target.dataset.i].text = e.target.value; if (e.target.value.trim()) later(); } });
+document.addEventListener("focusout", (e) => { if (e.target.matches(".rule-text") && !e.target.value.trim()) { e.target.value = draft.rules[e.target.dataset.i].text = e.target.defaultValue; later(); } });
+document.addEventListener("keydown", (e) => { if (e.target.matches(".rule-text") && e.key === "Enter") { e.preventDefault(); e.target.blur(); } });
+document.addEventListener("input", (e) => { if (e.target.matches(".name")) { draft.playbooks[e.target.dataset.i].name = e.target.value; if (e.target.value.trim()) later(); } });
+document.addEventListener("focusout", (e) => { if (e.target.matches(".name") && !e.target.value.trim()) { e.target.value = draft.playbooks[e.target.dataset.i].name = "Untitled"; later(); } });
+document.addEventListener("keydown", (e) => { if (e.target.matches(".name") && e.key === "Enter") e.target.blur(); });
+
+async function finish(path, text) {
+  if (!(await save())) return;
+  await fetch(path, { method: "POST" }).catch(() => {});
+  document.querySelectorAll("button, input").forEach((el) => (el.disabled = true));
+  $("status").textContent = text;
+}
+$("save").onclick = save;
+$("done").onclick = $("done2").onclick = () => finish("/api/done", "Publishing. You can close this tab.");
+$("close").onclick = () => finish("/api/close", "Draft saved. You can close this tab.");
+
+fetch("/api/draft").then((r) => r.json()).then((d) => {
+  d.playbooks ??= []; d.patterns ??= []; d.kit ??= {}; d.kit.skills ??= []; d.kit.mcp ??= []; d.rules ??= []; d.checks ??= [];
+  if (d.claudeMd) d.claudeMd.include = d.claudeMd.include === true;
+  draft = d; render();
+}).catch(() => note("Could not load the draft", true));
+</script>
+</body>
+</html>

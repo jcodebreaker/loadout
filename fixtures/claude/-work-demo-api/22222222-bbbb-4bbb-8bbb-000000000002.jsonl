@@ -1,0 +1,6 @@
+{"parentUuid":null,"isSidechain":false,"type":"user","message":{"role":"user","content":"why does the login test flake?"},"uuid":"b01","timestamp":"2026-09-01T10:00:00.000Z","cwd":"/work/demo/api"}
+{"parentUuid":"b01","isSidechain":false,"type":"assistant","message":{"model":"claude-test-1","role":"assistant","content":[{"type":"tool_use","id":"toolu_K1","name":"mcp__plugin_tracker_tracker__get_issue","input":{"id":"1"}}]},"uuid":"b02","timestamp":"2026-09-01T10:00:05.000Z","cwd":"/work/demo/api"}
+{"parentUuid":"b02","isSidechain":false,"type":"user","message":{"role":"user","content":[{"type":"text","text":"[Request interrupted by user]"}]},"uuid":"b03","timestamp":"2026-09-01T10:00:06.000Z","cwd":"/work/demo/api"}
+{"parentUuid":"b03","isSidechain":false,"type":"user","message":{"role":"user","content":"<local-command-stdout>done</local-command-stdout>"},"uuid":"b04","timestamp":"2026-09-01T10:00:07.000Z","cwd":"/work/demo/api"}
+{"parentUuid":"b04","isSidechain":false,"type":"user","message":{"role":"user","content":"try again with retries off"},"uuid":"b05","timestamp":"2026-09-01T10:01:00.000Z","cwd":"/work/demo/api"}
+{"parentUuid":"b05","isSidechain":true,"type":"user","message":{"role":"user","content":"an old-style sidechain line"},"uuid":"b06","timestamp":"2026-09-01T10:01:30.000Z","cwd":"/work/demo/api"}

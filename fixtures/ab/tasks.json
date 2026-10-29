@@ -1,0 +1,17 @@
+[
+  {
+    "id": "bug",
+    "prompt": "Support says discounts are broken for some orders. Can you fix it?",
+    "hidden": "hidden/bug.test.mjs"
+  },
+  {
+    "id": "feature",
+    "prompt": "Add support for free shipping on orders of $50 or more.",
+    "hidden": "hidden/feature.test.mjs"
+  },
+  {
+    "id": "refactor",
+    "prompt": "formatMoney in src/money.js is hard to read. Clean it up without changing what it does.",
+    "hidden": "hidden/refactor.test.mjs"
+  }
+]

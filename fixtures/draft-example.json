@@ -1,0 +1,273 @@
+{
+  "handle": "maya",
+  "displayName": "Maya",
+  "version": 1,
+  "builtAt": "2026-10-01T09:00:00.000Z",
+  "rules": [
+    {
+      "id": "read-diff-first",
+      "text": "Don't push until I've read the diff.",
+      "seen": 6,
+      "from": "correction",
+      "include": true
+    },
+    {
+      "id": "ask-before-deleting",
+      "text": "Ask before you delete any file.",
+      "seen": 5,
+      "from": "denied",
+      "include": true
+    },
+    {
+      "id": "reuse-components",
+      "text": "Use the existing button component instead of writing a new one.",
+      "seen": 4,
+      "from": "correction",
+      "include": true
+    },
+    {
+      "id": "branch-first",
+      "text": "Never commit to main; make a branch first.",
+      "seen": 4,
+      "from": "denied",
+      "include": true
+    },
+    {
+      "id": "check-in-browser",
+      "text": "Open it in the browser, not just the tests.",
+      "seen": 3,
+      "from": "interrupt",
+      "include": true
+    },
+    {
+      "id": "short-copy",
+      "text": "Keep the copy short, no explainer text.",
+      "seen": 2,
+      "from": "correction",
+      "include": true
+    }
+  ],
+  "checks": [
+    {
+      "id": "tests-before-commit",
+      "text": "Runs the tests before committing",
+      "rate": 0.7,
+      "of": 10,
+      "when": "feature"
+    },
+    {
+      "id": "screenshot-on-ui",
+      "text": "Looks at a screenshot after UI changes",
+      "rate": 0.62,
+      "of": 13,
+      "when": "design"
+    },
+    {
+      "id": "plan-before-multi-file",
+      "text": "Plans before changing several files",
+      "rate": 0.45,
+      "of": 11,
+      "when": "any"
+    },
+    {
+      "id": "asks-for-proof",
+      "text": "Asks for proof that the fix works",
+      "rate": 0.33,
+      "of": 9,
+      "when": "bug"
+    }
+  ],
+  "openings": {
+    "medianWords": 38,
+    "withAttachment": 0.41,
+    "namesFiles": 0.57,
+    "definesDone": 0.22,
+    "usesPlanFirst": 0.18
+  },
+  "playbooks": [
+    {
+      "id": "new-feature",
+      "name": "New feature",
+      "when": "Starting a feature from a short description",
+      "trigger": [
+        "add",
+        "feature",
+        "build"
+      ],
+      "steps": [
+        {
+          "do": "Writes a short spec"
+        },
+        {
+          "do": "Asks three questions",
+          "uses": "grilling"
+        },
+        {
+          "do": "Writes failing tests",
+          "uses": "tdd"
+        },
+        {
+          "do": "Edits code"
+        },
+        {
+          "do": "Runs tests"
+        },
+        {
+          "do": "Opens the PR"
+        }
+      ],
+      "seen": 14,
+      "include": true
+    },
+    {
+      "id": "bug-report",
+      "name": "Bug report",
+      "when": "A bug is reported with steps to reproduce",
+      "trigger": [
+        "bug",
+        "broken",
+        "fails"
+      ],
+      "steps": [
+        {
+          "do": "Reproduces it",
+          "uses": "diagnosing-bugs"
+        },
+        {
+          "do": "Finds the code",
+          "uses": "codegraph"
+        },
+        {
+          "do": "Edits code"
+        },
+        {
+          "do": "Runs tests"
+        }
+      ],
+      "seen": 6,
+      "include": true
+    },
+    {
+      "id": "new-idea",
+      "name": "New idea",
+      "when": "Exploring an idea before any code",
+      "trigger": [
+        "idea",
+        "mockup",
+        "explore"
+      ],
+      "steps": [
+        {
+          "do": "Grills by voice",
+          "uses": "hotseat"
+        },
+        {
+          "do": "Five mockups in parallel",
+          "uses": "general-purpose"
+        },
+        {
+          "do": "Picks one"
+        },
+        {
+          "do": "Builds it"
+        }
+      ],
+      "seen": 9,
+      "include": true
+    }
+  ],
+  "patterns": [
+    {
+      "text": "Make a mockup first.",
+      "seen": 11,
+      "include": true
+    },
+    {
+      "text": "Spin up a sub-agent for each one.",
+      "seen": 8,
+      "include": true
+    },
+    {
+      "text": "Read every diff before you push.",
+      "seen": 7,
+      "include": true
+    },
+    {
+      "text": "Make it more visual than text.",
+      "seen": 5,
+      "include": true
+    },
+    {
+      "text": "Keep it smaller, what can we remove?",
+      "seen": 3,
+      "include": false
+    }
+  ],
+  "kit": {
+    "skills": [
+      {
+        "name": "grilling",
+        "seen": 12,
+        "include": true
+      },
+      {
+        "name": "tdd",
+        "seen": 10,
+        "include": true
+      },
+      {
+        "name": "hallmark",
+        "seen": 6,
+        "include": true
+      },
+      {
+        "name": "diagnosing-bugs",
+        "seen": 4,
+        "include": true
+      }
+    ],
+    "mcp": [
+      {
+        "server": "codegraph",
+        "seen": 18,
+        "include": true
+      },
+      {
+        "server": "hotseat",
+        "seen": 9,
+        "include": true
+      }
+    ],
+    "agents": {
+      "share": 0.42,
+      "types": [
+        "general-purpose",
+        "Explore"
+      ],
+      "models": [
+        "opus",
+        "sonnet"
+      ]
+    }
+  },
+  "claudeMd": {
+    "text": "# How I work\n\n- Small pull requests, one idea each.\n- Read the diff before pushing. Always.\n- Tests stay offline and deterministic.\n- Prefer removing code to adding it.\n- UI copy: as few words as possible.\n\n## Before you say done\n\n- Run the tests.\n- Open the page and look at it.\n- Tell me what you did not check.\n",
+    "include": false
+  },
+  "stats": {
+    "sessions": 214,
+    "days": 30,
+    "prompts": 1380,
+    "skills": 11,
+    "subagents": 46
+  },
+  "removed": {
+    "paths": 23,
+    "secrets": 2,
+    "emails": 4,
+    "hosts": 3,
+    "names": 5,
+    "code": 17,
+    "urls": 8
+  }
+}
