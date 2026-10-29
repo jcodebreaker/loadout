@@ -2,7 +2,8 @@
 // setup checklist. Reads ~/.claude (settings, sessions, memory) for counts only; never prints their text.
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { MAX_LOADOUT_MD, readActive, readPack } from './pack.mjs';
+import { installedKit, missingKit } from './kit.mjs';
+import { MAX_LOADOUT_MD, readActive, readForgotten, readPack, withoutForgotten } from './pack.mjs';
 import { readSessions } from './sessions.mjs';
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
@@ -72,8 +73,10 @@ export async function doctor({ home, claude, root, days = 30 }) {
     add('✗', 'active.json is broken. Run `loadout off`.', 'loadout off');
   } else if (active) {
     let problem = null;
+    let missing = 0;
     try {
-      await readPack(active.path);
+      const loadout = await readPack(active.path);
+      missing = missingKit(withoutForgotten(loadout, readForgotten(loadout.handle, home)), installedKit(claude)).count;
       if (Buffer.byteLength(readFileSync(join(active.path, 'LOADOUT.md'))) > MAX_LOADOUT_MD) problem = 'LOADOUT.md is over 8 KB';
     } catch {
       problem = 'is missing or broken';
@@ -82,6 +85,7 @@ export async function doctor({ home, claude, root, days = 30 }) {
     if (problem) add('✗', `${active.handle}'s loadout ${problem}. Run \`loadout use\` again.`, `loadout use ${active.handle}`);
     else if (!ran) add('✗', `${active.handle}'s loadout is on, but the hooks haven't run since. Restart Claude Code.`, 'restart Claude Code');
     else add('✓', `${active.handle}'s loadout is on and injected`);
+    if (!problem && missing) add('!', `${active.handle}'s kit: ${plural(missing, 'tool')} missing. \`loadout use ${active.handle}\` lists them.`);
   }
 
   const failed = out.find((c) => c.mark === '✗');

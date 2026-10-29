@@ -59,6 +59,7 @@ When: Reviewing code or a pull request. Opening prompts mention "review", "pr", 
 
 1. Spin up a general-purpose sub-agent.
 2. Use the code-review skill.
+3. Use the small-diffs skill.
 
 ## How they ask
 
@@ -74,15 +75,16 @@ Maya phrases requests and check-ins like this. Ask your own check-ins the same w
 
 Skills:
 
-- `grilling`, used 12 times
-- `tdd`, used 8 times
+- `grilling`, used 12 times (if it is missing, suggest `/plugin marketplace add craftworks/claude-skills`, then `/plugin install craft-skills@craftworks`)
+- `tdd`, used 8 times (if it is missing, suggest `/plugin marketplace add craftworks/claude-skills`, then `/plugin install craft-skills@craftworks`)
 - `code-review`, used 6 times
-- `diagnosing-bugs`, used 5 times
-- `vercel:deploy`, used 2 times (skill `deploy` from the `vercel` plugin; if it is missing, suggest `/plugin install vercel`)
+- `diagnosing-bugs`, used 5 times (if it is missing, suggest `/plugin marketplace add craftworks/claude-skills`, then `/plugin install craft-skills@craftworks`)
+- `small-diffs`, used 4 times (bundled: `loadout skills maya`)
+- `vercel:deploy`, used 2 times (skill `deploy` from the `vercel` plugin; if it is missing, suggest `/plugin marketplace add https://git.example.com/ship-tools.git`, then `/plugin install vercel@ship-tools`)
 
 MCP servers:
 
-- `playwright`, used 6 times
+- `playwright`, used 6 times (only on Maya's machine: do this step the plain way)
 
 If one is not connected, tell the user it can be added with `claude mcp add` and carry on without it.
 

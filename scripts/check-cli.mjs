@@ -131,7 +131,17 @@ try {
   await check('use <pack path> copies the pack and writes active.json', async () => {
     const r = cli('use', packDir);
     assert.equal(r.status, 0, r.stderr);
-    assert.equal(r.stdout.trim(), "Using maya's loadout: 4 playbooks (Build a feature, Fix a bug, New idea or plan, Review).");
+    assert.equal(r.stdout, [
+      "Using maya's loadout: 4 playbooks (Build a feature, Fix a bug, New idea or plan, Review).",
+      "Missing for Maya's playbooks:",
+      '  /plugin marketplace add craftworks/claude-skills',
+      '  /plugin marketplace add https://git.example.com/ship-tools.git',
+      '  /plugin install craft-skills@craftworks',
+      '  /plugin install vercel@ship-tools',
+      '  small-diffs: bundled — `loadout skills maya` installs it',
+      "  playwright: only on Maya's machine — that step runs the plain way",
+      '',
+    ].join('\n'));
     const active = JSON.parse(await readFile(join(home, 'active.json'), 'utf8'));
     assert.equal(active.handle, 'maya');
     assert.equal(active.path, join(home, 'packs', 'maya'));
@@ -148,7 +158,8 @@ try {
   await check('doctor: on but the hooks have not run since', async () => {
     await rm(join(home, 'last-hook.json'), { force: true });
     const lines = doctor();
-    assert.equal(lines.at(-2), "✗ maya's loadout is on, but the hooks haven't run since. Restart Claude Code.");
+    assert.equal(lines.at(-3), "✗ maya's loadout is on, but the hooks haven't run since. Restart Claude Code.");
+    assert.equal(lines.at(-2), "! maya's kit: 6 tools missing. `loadout use maya` lists them.");
     assert.equal(lines.at(-1), 'Next: restart Claude Code');
   });
 
@@ -160,7 +171,7 @@ try {
   });
 
   await check('doctor: on and injected', () => {
-    assert.deepEqual(doctor().slice(-2), ["✓ maya's loadout is on and injected", 'Next: start a task']);
+    assert.deepEqual(doctor().slice(-3), ["✓ maya's loadout is on and injected", "! maya's kit: 6 tools missing. `loadout use maya` lists them.", 'Next: start a task']);
   });
 
   await check('prompt offers the matching playbook once per session, with a cue', async () => {
@@ -249,6 +260,36 @@ try {
   await check('use <handle> reloads an installed pack', () => {
     assert.equal(cli('use', 'maya').status, 0);
     assert.equal(cli('use', 'nobody').status, 1);
+  });
+
+  await check('use lists only the kit you lack; skills installs bundled ones only with --yes, never over a folder', async () => {
+    const example = join(root, 'docs', 'example', 'maya.loadout');
+    const skill = join(claude, 'skills', 'small-diffs', 'SKILL.md');
+    const lines = (r) => (assert.equal(r.status, 0, r.stderr), r.stdout.trim().split('\n'));
+    await mkdir(join(claude, 'plugins'), { recursive: true });
+    await writeFile(join(claude, 'plugins', 'installed_plugins.json'), JSON.stringify({ version: 2, plugins: { 'craft-skills@craftworks': [{ scope: 'user' }] } }));
+    await writeFile(join(claude, 'plugins', 'known_marketplaces.json'), JSON.stringify({ 'ship-tools': { source: { source: 'git', url: 'https://git.example.com/ship-tools.git' } } }));
+    await writeFile(join(claude, '.claude.json'), JSON.stringify({ projects: { '/work/shop': { mcpServers: { playwright: { command: 'x' } } } } }));
+    try {
+      assert.deepEqual(lines(cli('skills', 'maya')), ["maya's loadout bundles no skills."], 'the pack written in this check has no skills folder');
+      assert.deepEqual(lines(cli('use', example)).slice(1), ["Missing for Maya's playbooks:", '  /plugin install vercel@ship-tools', '  small-diffs: bundled — `loadout skills maya` installs it']);
+      assert.ok(existsSync(join(home, 'packs', 'maya', 'skills', 'small-diffs', 'SKILL.md')), 'use copies bundled skills');
+      const dry = lines(cli('skills', 'maya'));
+      assert.match(dry[0], /^small-diffs: .*packs\/maya\/skills\/small-diffs → .*skills\/small-diffs \(SKILL\.md\)$/);
+      assert.equal(dry[1], '`loadout skills maya --yes` installs them.');
+      assert.ok(!existsSync(skill), 'nothing written without --yes');
+      assert.match(lines(cli('skills', 'maya', '--yes'))[0], /^Installed small-diffs in .*skills\/small-diffs$/);
+      assert.equal(await readFile(skill, 'utf8'), await readFile(join(example, 'skills', 'small-diffs', 'SKILL.md'), 'utf8'));
+      await writeFile(skill, 'mine');
+      assert.match(lines(cli('skills', 'maya', '--yes'))[0], /^Skipped small-diffs: .* already exists\.$/);
+      assert.equal(await readFile(skill, 'utf8'), 'mine');
+      await writeFile(join(claude, 'plugins', 'installed_plugins.json'), JSON.stringify({ plugins: { 'craft-skills@craftworks': [], 'vercel@ship-tools': [] } }));
+      assert.deepEqual(lines(cli('use', 'maya')).slice(1), [], 'nothing missing, nothing printed');
+      assert.equal(cli('skills', 'nobody').status, 1);
+      assert.equal(cli('skills', '../maya').status, 1);
+    } finally {
+      for (const f of ['plugins', 'skills', '.claude.json']) await rm(join(claude, f), { recursive: true, force: true });
+    }
   });
 
   await check('use drops items switched off in review, and CLAUDE.md unless switched on', async () => {

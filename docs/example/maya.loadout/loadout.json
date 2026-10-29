@@ -157,6 +157,10 @@
         {
           "do": "Uses the code-review skill",
           "uses": "code-review"
+        },
+        {
+          "do": "Uses the small-diffs skill",
+          "uses": "small-diffs"
         }
       ],
       "seen": 5
@@ -180,29 +184,67 @@
     "skills": [
       {
         "name": "grilling",
-        "seen": 12
+        "seen": 12,
+        "source": {
+          "kind": "plugin",
+          "plugin": "craft-skills",
+          "marketplace": "craftworks",
+          "repo": "craftworks/claude-skills"
+        }
       },
       {
         "name": "tdd",
-        "seen": 8
+        "seen": 8,
+        "source": {
+          "kind": "plugin",
+          "plugin": "craft-skills",
+          "marketplace": "craftworks",
+          "repo": "craftworks/claude-skills"
+        }
       },
       {
         "name": "code-review",
-        "seen": 6
+        "seen": 6,
+        "source": {
+          "kind": "builtin"
+        }
       },
       {
         "name": "diagnosing-bugs",
-        "seen": 5
+        "seen": 5,
+        "source": {
+          "kind": "plugin",
+          "plugin": "craft-skills",
+          "marketplace": "craftworks",
+          "repo": "craftworks/claude-skills"
+        }
+      },
+      {
+        "name": "small-diffs",
+        "seen": 4,
+        "source": {
+          "kind": "personal",
+          "bundled": true
+        }
       },
       {
         "name": "vercel:deploy",
-        "seen": 2
+        "seen": 2,
+        "source": {
+          "kind": "plugin",
+          "plugin": "vercel",
+          "marketplace": "ship-tools",
+          "url": "https://git.example.com/ship-tools.git"
+        }
       }
     ],
     "mcp": [
       {
         "server": "playwright",
-        "seen": 6
+        "seen": 6,
+        "source": {
+          "kind": "personal"
+        }
       }
     ],
     "agents": {

@@ -187,8 +187,8 @@ export function validate(loadout) {
   return errors;
 }
 
-const nameOf = (l) => (isStr(l.displayName) ? l.displayName.trim() : l.handle);
-const possessive = (name) => (/s$/i.test(name) ? `${name}'` : `${name}'s`);
+export const nameOf = (l) => (isStr(l.displayName) ? l.displayName.trim() : l.handle);
+export const possessive = (name) => (/s$/i.test(name) ? `${name}'` : `${name}'s`);
 const oneLine = (s) => String(s).replace(/\s+/g, ' ').trim();
 const noDot = (s) => oneLine(s).replace(/[.\s]+$/, '');
 const times = (n) => (n === 1 ? 'once' : `${n} times`);
@@ -257,9 +257,43 @@ function openingLines(o) {
   return out;
 }
 
-function skillHint(name) {
-  const [plugin, skill] = name.split(':');
-  return skill ? ` (skill \`${skill}\` from the \`${plugin}\` plugin; if it is missing, suggest \`/plugin install ${plugin}\`)` : '';
+// Where a kit item comes from (`source`: plugin, builtin or personal, maybe bundled), with only the fields that are safe to print: someone else's
+// pack names the commands the user types. null when missing or unusable, as in packs from before sources.
+const SAFE_NAME = /^[A-Za-z0-9][\w.-]{0,63}$/;
+export function kitSource(item) {
+  const s = item?.source;
+  if (!s || typeof s !== 'object') return null;
+  if (s.kind === 'builtin') return { kind: 'builtin' };
+  if (s.kind === 'personal') return { kind: 'personal', bundled: s.bundled === true && SAFE_NAME.test(item.name ?? '') };
+  if (s.kind !== 'plugin' || !SAFE_NAME.test(s.plugin ?? '')) return null;
+  const out = { kind: 'plugin', plugin: s.plugin };
+  if (SAFE_NAME.test(s.marketplace ?? '')) out.marketplace = s.marketplace;
+  if (/^[\w.-]+\/[\w.-]+$/.test(s.repo ?? '')) out.repo = s.repo;
+  else if (/^https:\/\/[^\s`'"]+$/.test(s.url ?? '')) out.url = s.url;
+  return out;
+}
+
+// The lines a user types to get a plugin: the marketplace (when its repo is known), then the plugin.
+export function installLines(src) {
+  const add = src.marketplace && (src.repo ?? src.url);
+  return [...(add ? [`/plugin marketplace add ${add}`] : []), `/plugin install ${src.plugin}${src.marketplace ? `@${src.marketplace}` : ''}`];
+}
+
+// How to get a missing kit item, for the agent: install lines, the bundled copy, or the plain way.
+function kitHint(item, l) {
+  const src = kitSource(item);
+  if (src?.kind === 'plugin') return `suggest ${installLines(src).map((c) => `\`${c}\``).join(', then ')}`;
+  if (src?.kind === 'personal') return src.bundled ? `bundled: \`loadout skills ${l.handle}\`` : `only on ${possessive(nameOf(l))} machine: do this step the plain way`;
+  return '';
+}
+
+// The Kit section's note on one item: which plugin a plugin:skill name comes from, and how to get it.
+function kitNote(item, l, name = '') {
+  const [plugin, skill] = oneLine(name).split(':');
+  const hint = kitHint(item, l);
+  const from = skill ? `skill \`${skill}\` from the \`${plugin}\` plugin` : '';
+  const how = hint && kitSource(item).kind === 'plugin' ? `if it is missing, ${hint}` : hint;
+  return from || how ? ` (${[from, how].filter(Boolean).join('; ')})` : '';
 }
 
 const fence = (text) => '`'.repeat(Math.max(3, ...(text.match(/`+/g) ?? []).map((r) => r.length + 1)));
@@ -273,8 +307,8 @@ function sections(l, who) {
   const openings = openingLines(l.openings).map((o) => o.line);
   const k = l.kit;
   const kitItems = [
-    ...k.skills.map((sk) => ({ group: 'skills', line: `- \`${oneLine(sk.name)}\`${isNum(sk.seen) ? `, used ${times(sk.seen)}` : ''}${skillHint(oneLine(sk.name))}` })),
-    ...k.mcp.map((m) => ({ group: 'mcp', line: `- \`${oneLine(m.server)}\`${isNum(m.seen) ? `, used ${times(m.seen)}` : ''}` })),
+    ...k.skills.map((sk) => ({ group: 'skills', line: `- \`${oneLine(sk.name)}\`${isNum(sk.seen) ? `, used ${times(sk.seen)}` : ''}${kitNote(sk, l, sk.name)}` })),
+    ...k.mcp.map((m) => ({ group: 'mcp', line: `- \`${oneLine(m.server)}\`${isNum(m.seen) ? `, used ${times(m.seen)}` : ''}${kitNote(m, l)}` })),
     { group: 'agents', line: agentsLine(k.agents, who) },
   ];
   return [
@@ -344,15 +378,29 @@ function playbooksMd(loadout, playbooks, lead) {
   const ids = new Set(playbooks.map((p) => p.id));
   const checks = (loadout.checks ?? []).filter((c) => c.when === 'any' || ids.has(c.when)).map(checkLine);
   const body = [lead, '', ...playbooks.flatMap((p) => [...playbookLines(p), ''])].join('\n') + '\n';
-  const tail = (n) => [
+  const kit = kitFor(loadout, playbooks);
+  const tail = (n, h) => [
     ...(rules.length ? ['Their rules:', '', ...rules, ''] : []),
     ...(n ? ["Before you say it's done:", '', ...checks.slice(0, n), ''] : []),
+    ...(h ? ['If a tool is missing:', '', ...kit.slice(0, h), ''] : []),
   ].join('\n');
   let n = checks.length;
-  while (n > 0 && body.length + tail(n).length > MAX_PLAYBOOK_MD) n--;
-  const end = tail(n);
+  let h = kit.length;
+  while (h > 0 && body.length + tail(n, h).length > MAX_PLAYBOOK_MD) h--;
+  while (n > 0 && body.length + tail(n, h).length > MAX_PLAYBOOK_MD) n--;
+  const end = tail(n, h);
   const room = MAX_PLAYBOOK_MD - end.length;
   return ((body.length > room ? `${body.slice(0, room - 3)}…\n\n` : body) + end).replace(/\n+$/, '\n');
+}
+
+// The kit items these playbooks' steps name, with how to get each one when it is missing.
+function kitFor(loadout, playbooks) {
+  const uses = new Set(playbooks.flatMap((p) => p.steps.map((s) => s.uses)).filter(isStr));
+  const items = [
+    ...loadout.kit.skills.filter((sk) => uses.has(sk.name)).map((sk) => [sk.name, sk]),
+    ...loadout.kit.mcp.filter((m) => uses.has(`mcp:${m.server}`)).map((m) => [m.server, m]),
+  ];
+  return items.map(([name, item]) => [name, kitHint(item, loadout)]).filter(([, hint]) => hint).map(([name, hint]) => `- \`${oneLine(name)}\`: ${hint}.`);
 }
 
 // The playbook to follow now (the `auto` mode).

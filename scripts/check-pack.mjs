@@ -4,6 +4,7 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { MAX_LOADOUT_MD, MAX_PLAYBOOK_MD, forgettable, imperative, pickItem, playbookFor, playbooksFor, readPack, renderLoadoutMd, renderOfferMd, renderPlaybookMd, validate, withoutForgotten, writePack } from '../src/pack.mjs';
+import { missingKit } from '../src/kit.mjs';
 import { MAX_RECALL_MD, quiet, recallBanner, recallFor, renderRecall, stem } from '../src/recall/query.mjs';
 
 const fixture = JSON.parse(await readFile(new URL('../fixtures/loadout-example.json', import.meta.url), 'utf8'));
@@ -86,6 +87,7 @@ When: Reviewing code or a pull request. Opening prompts mention "review", "pr", 
 
 1. Spin up a general-purpose sub-agent.
 2. Use the code-review skill.
+3. Use the small-diffs skill.
 
 ## How they ask
 
@@ -101,15 +103,16 @@ Maya phrases requests and check-ins like this. Ask your own check-ins the same w
 
 Skills:
 
-- \`grilling\`, used 12 times
-- \`tdd\`, used 8 times
+- \`grilling\`, used 12 times (if it is missing, suggest \`/plugin marketplace add craftworks/claude-skills\`, then \`/plugin install craft-skills@craftworks\`)
+- \`tdd\`, used 8 times (if it is missing, suggest \`/plugin marketplace add craftworks/claude-skills\`, then \`/plugin install craft-skills@craftworks\`)
 - \`code-review\`, used 6 times
-- \`diagnosing-bugs\`, used 5 times
-- \`vercel:deploy\`, used 2 times (skill \`deploy\` from the \`vercel\` plugin; if it is missing, suggest \`/plugin install vercel\`)
+- \`diagnosing-bugs\`, used 5 times (if it is missing, suggest \`/plugin marketplace add craftworks/claude-skills\`, then \`/plugin install craft-skills@craftworks\`)
+- \`small-diffs\`, used 4 times (bundled: \`loadout skills maya\`)
+- \`vercel:deploy\`, used 2 times (skill \`deploy\` from the \`vercel\` plugin; if it is missing, suggest \`/plugin marketplace add https://git.example.com/ship-tools.git\`, then \`/plugin install vercel@ship-tools\`)
 
 MCP servers:
 
-- \`playwright\`, used 6 times
+- \`playwright\`, used 6 times (only on Maya's machine: do this step the plain way)
 
 If one is not connected, tell the user it can be added with \`claude mcp add\` and carry on without it.
 
@@ -257,6 +260,35 @@ await check('renderOfferMd asks before anything runs, with the steps in short', 
   assert.ok(two.length <= MAX_PLAYBOOK_MD);
 });
 
+await check('kit sources: install lines, the bundled copy or the plain way; old and odd sources say nothing', () => {
+  const offer = renderOfferMd(fixture, [fixture.playbooks[1]]);
+  assert.ok(offer.endsWith("If a tool is missing:\n\n- `diagnosing-bugs`: suggest `/plugin marketplace add craftworks/claude-skills`, then `/plugin install craft-skills@craftworks`.\n- `playwright`: only on Maya's machine: do this step the plain way.\n"), offer);
+  assert.ok(renderPlaybookMd(fixture, fixture.playbooks[3]).includes('- `small-diffs`: bundled: `loadout skills maya`.'));
+  assert.ok(!renderPlaybookMd(fixture, fixture.playbooks[3]).includes('`code-review`:'), 'builtin needs nothing');
+  const old = copy();
+  for (const sk of old.kit.skills) delete sk.source;
+  delete old.kit.mcp[0].source;
+  old.kit.skills[0].source = { kind: 'plugin', plugin: 'craft-skills', marketplace: '‹name›', repo: 'x; rm -rf ~' };
+  old.kit.skills[1].source = { kind: 'plugin', plugin: '../evil' };
+  assert.deepEqual(validate(old), []);
+  const md = renderLoadoutMd(old);
+  assert.ok(md.includes('- `grilling`, used 12 times (if it is missing, suggest `/plugin install craft-skills`)\n- `tdd`, used 8 times\n'));
+  assert.ok(md.includes('- `vercel:deploy`, used 2 times (skill `deploy` from the `vercel` plugin)\n'));
+  assert.ok(!renderOfferMd(old, [old.playbooks[1]]).includes('If a tool is missing'));
+  const none = { plugins: new Set(), marketplaces: new Set(), skills: new Set(), mcp: new Set() };
+  assert.deepEqual(missingKit(fixture, none), { count: 6, lines: [
+    '/plugin marketplace add craftworks/claude-skills',
+    '/plugin marketplace add https://git.example.com/ship-tools.git',
+    '/plugin install craft-skills@craftworks',
+    '/plugin install vercel@ship-tools',
+    'small-diffs: bundled — `loadout skills maya` installs it',
+    "playwright: only on Maya's machine — that step runs the plain way",
+  ] });
+  const some = { plugins: new Set(['craft-skills@craftworks']), marketplaces: new Set(['ship-tools']), skills: new Set(['small-diffs']), mcp: new Set(['playwright']) };
+  assert.deepEqual(missingKit(fixture, some), { count: 1, lines: ['/plugin install vercel@ship-tools'] });
+  assert.deepEqual(missingKit(old, none), { count: 1, lines: ['/plugin install craft-skills'] });
+});
+
 await check('renderPlaybookMd carries the top rules and its checks, under 2 KB', () => {
   const md = renderPlaybookMd(fixture, fixture.playbooks[1]);
   assert.ok(md.startsWith('Following Maya\'s loadout: this prompt matches the playbook "Fix a bug".'));
@@ -269,6 +301,7 @@ await check('renderPlaybookMd carries the top rules and its checks, under 2 KB',
   const cut = renderPlaybookMd(fixture, huge);
   assert.ok(cut.length <= MAX_PLAYBOOK_MD);
   for (const r of fixture.rules.slice(0, 3)) assert.ok(cut.includes(`- ${r.text}.`), `${r.id} survives the cap`);
+  assert.ok(!cut.includes('If a tool is missing'), 'kit hints go before anything else');
 });
 
 await check('withoutForgotten drops items by ref, or by text when the id changed', () => {

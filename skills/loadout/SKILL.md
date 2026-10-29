@@ -15,7 +15,7 @@ A loadout is how one developer works with Claude Code: the rules they've had to 
 4. Follow a playbook only when the loadout sends one with a prompt. When it's offered, ask once in one line, as the offer words it, and follow it only after a yes; if the user narrows it ("no commit"), drop those steps. Any other reply: work normally. Once you follow it, say "following <name>'s loadout" once at the start of that task, then follow its steps in the order given, with the skill, subagent or tool each step names (skills with the Skill tool, subagents with the Agent tool and the named type, MCP tools by their server).
 5. Never invent steps, skip ahead or reorder. A step that doesn't apply to this task: say so in a few words and move to the next.
 6. A step that commits, pushes, opens a PR or deploys needs the user's say-so in this task, even inside an accepted playbook. Ask when you reach it.
-7. If a named skill, subagent or MCP server isn't available, tell the user once (with the install hint from the Kit if there is one) and do that step the plain way.
+7. If a named skill, subagent or MCP server isn't available, tell the user once (with the install hint from the Kit if there is one) and do that step the plain way. For a bundled skill, show what `loadout skills <handle>` would write and add `--yes` only after the user says yes.
 8. Phrase your check-ins and questions the way the owner asks, from "How they ask". Don't quote them back to the user.
 9. When no playbook matches, work normally. The rules, checks, kit and the way they ask still apply.
 10. If the user says an item is wrong or to stop following it, use the forget skill. "Not this time" needs nothing: just skip it for this task.
