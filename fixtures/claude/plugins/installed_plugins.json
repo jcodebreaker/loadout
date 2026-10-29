@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "plugins": {
+    "mattpocock-skills@mattpocock": [
+      {
+        "scope": "user",
+        "installPath": "/home/demo/.claude/plugins/cache/mattpocock/mattpocock-skills/1.2.0",
+        "version": "1.2.0",
+        "gitCommitSha": "0000000000000000000000000000000000000000"
+      }
+    ],
+    "context-tools@acme-git": [
+      {
+        "scope": "user",
+        "installPath": "/home/demo/.claude/plugins/cache/acme-git/context-tools/0.3.0",
+        "version": "0.3.0"
+      }
+    ],
+    "code-review@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/home/demo/.claude/plugins/cache/claude-plugins-official/code-review/1.0.0",
+        "version": "1.0.0"
+      }
+    ]
+  }
+}

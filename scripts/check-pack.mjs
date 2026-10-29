@@ -1,10 +1,12 @@
 // Offline checks for src/pack.mjs against the invented fixture.
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { MAX_LOADOUT_MD, MAX_PLAYBOOK_MD, forgettable, imperative, pickItem, playbookFor, playbooksFor, readPack, renderLoadoutMd, renderOfferMd, renderPlaybookMd, validate, withoutForgotten, writePack } from '../src/pack.mjs';
 import { missingKit } from '../src/kit.mjs';
+import { forPack } from '../src/clean.mjs';
 import { MAX_RECALL_MD, quiet, recallBanner, recallFor, renderRecall, stem } from '../src/recall/query.mjs';
 
 const fixture = JSON.parse(await readFile(new URL('../fixtures/loadout-example.json', import.meta.url), 'utf8'));
@@ -338,6 +340,48 @@ await check('writePack and readPack round trip', async () => {
     const bad = copy();
     bad.handle = '!';
     await assert.rejects(writePack(bad, dir), /invalid loadout/);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+await check('kit sources validate, and only bundled skill folders ship, text only, in skills/<name>/', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'loadout-pack-'));
+  try {
+    const draft = copy();
+    const sk = draft.kit.skills;
+    sk[0].source = { kind: 'personal', bundled: true };
+    sk[0].files = [{ path: 'SKILL.md', text: '# grilling\n' }, { path: 'refs/a.md', text: 'a' }, { path: '../evil.md', text: 'x' }, { path: 'refs/‹name›.md', text: 'x' }];
+    sk[1].source = { kind: 'personal', bundled: false };
+    sk[1].files = [{ path: 'SKILL.md', text: 'tdd' }];
+    sk[2].source = { kind: 'personal', bundled: true }; // switched on but nothing to copy
+    sk[2].files = [];
+    sk[3].source = { kind: 'builtin' };
+    sk[4].source = { kind: 'plugin', plugin: 'vercel', marketplace: 'vercel', repo: 'vercel/vercel-plugin' };
+    draft.kit.mcp[0].source = { kind: 'personal' };
+    const pack = forPack(draft);
+    assert.deepEqual(validate(pack), []);
+    assert.equal(renderLoadoutMd(pack).includes('# grilling'), false, 'skill text never reaches LOADOUT.md');
+    assert.equal(pack.kit.skills[1].files, undefined);
+    assert.deepEqual(pack.kit.skills[2].source, { kind: 'personal', bundled: false });
+    const out = await writePack(pack, dir);
+    const json = JSON.parse(await readFile(join(out, 'loadout.json'), 'utf8'));
+    assert.deepEqual(json.kit.skills.slice(0, 5).map((s) => s.source), [
+      { kind: 'personal', bundled: true }, { kind: 'personal', bundled: false }, { kind: 'personal', bundled: false }, { kind: 'builtin' }, sk[4].source,
+    ]);
+    assert.ok(!JSON.stringify(json).includes('"files"'));
+    assert.equal(await readFile(join(out, 'skills', 'grilling', 'SKILL.md'), 'utf8'), '# grilling\n');
+    assert.deepEqual((await readdir(join(out, 'skills'), { recursive: true })).sort(), ['grilling', 'grilling/SKILL.md', 'grilling/refs', 'grilling/refs/a.md']);
+    assert.ok(!existsSync(join(dir, 'evil.md')));
+    // Republished without the bundle: the folder goes.
+    sk[0].source.bundled = false;
+    await writePack(forPack(draft), dir);
+    assert.ok(!existsSync(join(out, 'skills')));
+    for (const source of [{ kind: 'npm' }, { kind: 'plugin' }, { kind: 'personal', bundled: 'yes' }, 'plugin']) {
+      const bad = copy();
+      bad.kit.mcp[0].source = source;
+      assert.deepEqual(validate(bad), ['kit.mcp[0].source must be a plugin, builtin or personal source']);
+    }
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

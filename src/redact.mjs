@@ -22,7 +22,7 @@ const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 // A name of five or more letters also matches with spaces, dashes or underscores between them
 // ("starfield" → "Star Field", "star-field").
 const loose = (n) => (n.length >= 5 && /^[A-Za-z0-9]+$/.test(n) ? [...n].map(escape).join('[-_ ]?') : escape(n));
-const COMMON_PARTS = new Set(['server', 'client', 'plugin', 'plugins', 'frontend', 'backend', 'mobile', 'worker', 'engine', 'shared', 'common', 'config', 'script', 'scripts', 'website', 'landing', 'service', 'services', 'native', 'stack', 'project', 'starter', 'template', 'monorepo', 'packages', 'desktop', 'extension']);
+const COMMON_PARTS = new Set(['claude', 'plugin', 'skills', 'official', 'server', 'client', 'plugin', 'plugins', 'frontend', 'backend', 'mobile', 'worker', 'engine', 'shared', 'common', 'config', 'script', 'scripts', 'website', 'landing', 'service', 'services', 'native', 'stack', 'project', 'starter', 'template', 'monorepo', 'packages', 'desktop', 'extension']);
 
 // Path characters stop at whitespace, quotes, backticks and brackets so `"/a/b"` and `(/a/b)` keep their wrappers.
 const PC = String.raw`[^\s'"\`<>|(){}\[\],;‹›]`;

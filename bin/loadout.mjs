@@ -142,6 +142,9 @@ async function build(flags) {
   addCounts(removed, deep.removed);
   // Items that were only a private name (an MCP server named after a repo) go, not ship as ‹name›.
   const { value: kept, dropped } = dropRedacted(deep.value);
+  // Where each kit item comes from, resolved on the redacted names so a private one never gets looked up.
+  const { withSources } = await import('../src/sources.mjs');
+  kept.kit = withSources(kept.kit, claudeDir(), ctx);
   // Their own CLAUDE.md rides along redacted, but stays out of the pack until they switch it on in review.
   let claudeMd = null;
   const claudeMdPath = join(claudeDir(), 'CLAUDE.md');

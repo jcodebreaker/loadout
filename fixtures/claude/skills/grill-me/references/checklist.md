@@ -1,0 +1,2 @@
+- What does done look like?
+- What would make this the wrong thing to build?

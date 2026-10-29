@@ -83,7 +83,15 @@ export function forPack(draft) {
   if (l.rules !== undefined) l.rules = keep(l.rules);
   if (l.checks !== undefined) l.checks = keep(l.checks);
   if (Array.isArray(l.rules)) l.rules = l.rules.map(({ why, ...rest }) => rest);
-  if (l.kit) l.kit = { ...l.kit, skills: keep(l.kit.skills), mcp: keep(l.kit.mcp) };
+  // A personal skill's files go only when the owner switched Bundle on; writePack moves them out of loadout.json.
+  const bundle = (s) => {
+    if (s?.source?.kind !== 'personal') return s;
+    const { files, ...rest } = s;
+    // A draft carries the files; a published pack has them on disk already (no `files`), so its flag stands.
+    const on = s.source.bundled === true && (files === undefined || (Array.isArray(files) && files.length > 0));
+    return { ...rest, source: { kind: 'personal', bundled: on }, ...(on ? { files } : {}) };
+  };
+  if (l.kit) l.kit = { ...l.kit, skills: Array.isArray(l.kit.skills) ? keep(l.kit.skills).map(bundle) : l.kit.skills, mcp: keep(l.kit.mcp) };
   if (l.claudeMd && l.claudeMd.include !== false && typeof l.claudeMd.text === 'string') l.claudeMd = { text: l.claudeMd.text };
   else delete l.claudeMd;
   return l;

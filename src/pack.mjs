@@ -1,9 +1,9 @@
 // Loadout <-> folder, and the LOADOUT.md Claude reads. Pure functions except writePack/readPack
 // and the small state helpers the CLI and hooks share.
-import { mkdir, readFile, writeFile, stat } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile, stat } from 'node:fs/promises';
 import { mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 export const MAX_LOADOUT_MD = 8 * 1024;
 export const MAX_PLAYBOOK_MD = 2 * 1024;
@@ -85,6 +85,15 @@ function provenance(item, at, errors) {
   if (item.lastSeen !== undefined && !(typeof item.lastSeen === 'string' && /^\d{4}-\d\d-\d\d$/.test(item.lastSeen))) errors.push(`${at}.lastSeen must be YYYY-MM-DD`);
 }
 
+// Where a kit item comes from (optional: older packs have none). Names only, never paths or versions.
+const OPT = (v) => v === undefined || isStr(v);
+function validSource(s) {
+  if (!s || typeof s !== 'object') return false;
+  if (s.kind === 'plugin') return isStr(s.plugin) && OPT(s.marketplace) && OPT(s.repo) && OPT(s.url);
+  if (s.kind === 'personal') return s.bundled === undefined || typeof s.bundled === 'boolean';
+  return s.kind === 'builtin';
+}
+
 export function validate(loadout) {
   const errors = [];
   if (!loadout || typeof loadout !== 'object') return ['loadout must be an object'];
@@ -122,6 +131,11 @@ export function validate(loadout) {
   else {
     if (!Array.isArray(k.skills) || !k.skills.every((s) => s && isStr(s.name))) errors.push('kit.skills must be a list of { name }');
     if (!Array.isArray(k.mcp) || !k.mcp.every((s) => s && isStr(s.server))) errors.push('kit.mcp must be a list of { server }');
+    for (const [key, list] of [['skills', k.skills], ['mcp', k.mcp]]) {
+      (Array.isArray(list) ? list : []).forEach((s, i) => {
+        if (s?.source !== undefined && !validSource(s.source)) errors.push(`kit.${key}[${i}].source must be a plugin, builtin or personal source`);
+      });
+    }
     const a = k.agents;
     if (!a || !isNum(a.share) || a.share < 0 || a.share > 1 || !Array.isArray(a.types) || !Array.isArray(a.models)) {
       errors.push('kit.agents must be { share 0..1, types, models }');
@@ -558,11 +572,33 @@ function readmeCard(l) {
   return lines.join('\n');
 }
 
+// A bundled skill's files ride in the draft as kit.skills[i].files; the pack keeps them under skills/<name>/.
+const SKILL_DIR = /^[\w.-]+$/;
+const safePath = (p) => typeof p === 'string' && !/[‹›\\]/.test(p) && p.split('/').every((part) => SKILL_DIR.test(part) && part !== '.' && part !== '..');
+
 export async function writePack(loadout, outDir) {
   const errors = validate(loadout);
   if (errors.length) throw new Error(`invalid loadout: ${errors.join('; ')}`);
   const dir = join(outDir, `${loadout.handle}.loadout`);
   await mkdir(dir, { recursive: true });
+  const bundled = loadout.kit.skills.filter((s) => s.source?.kind === 'personal' && s.source.bundled && !s.name.includes('/') && safePath(s.name) && Array.isArray(s.files));
+  // A republish must not keep a skill that is no longer bundled.
+  await rm(join(dir, 'skills'), { recursive: true, force: true });
+  const written = new Set();
+  for (const s of bundled) {
+    for (const f of s.files.filter((f) => safePath(f?.path) && typeof f.text === 'string')) {
+      const file = join(dir, 'skills', s.name, ...f.path.split('/'));
+      await mkdir(dirname(file), { recursive: true });
+      await writeFile(file, f.text);
+      written.add(s);
+    }
+  }
+  const asShipped = (s) => {
+    const { files, ...rest } = s;
+    // Without `files` the skill was bundled in an earlier pack and its folder is copied by `use`, not here.
+    return s.source?.kind === 'personal' ? { ...rest, source: { kind: 'personal', bundled: written.has(s) || (s.source.bundled === true && files === undefined) } } : rest;
+  };
+  loadout = { ...loadout, kit: { ...loadout.kit, skills: loadout.kit.skills.map(asShipped) } };
   await writeFile(join(dir, 'loadout.json'), `${JSON.stringify(loadout, null, 2)}\n`);
   await writeFile(join(dir, 'LOADOUT.md'), renderLoadoutMd(loadout));
   await writeFile(join(dir, 'README.md'), readmeCard(loadout));

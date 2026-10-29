@@ -3,6 +3,10 @@ import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
 import { mine, turnsOf, classify, classifyTurn, phrases, ruleClauses, applyRewrite } from '../src/mine.mjs';
 import { memoryRule, readMemories } from '../src/memory.mjs';
+import { MAX_SKILL_BYTES, skillFiles, withSources } from '../src/sources.mjs';
+import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 // Builds a Session in PLAN.md's shape. Each event gets the next minute after `start`.
 function session(id, start, script, subagents = []) {
@@ -348,3 +352,54 @@ assert.deepEqual(merged.patterns, loadout.patterns);
 assert.throws(() => applyRewrite(loadout, 'not json'));
 assert.throws(() => applyRewrite(loadout, JSON.stringify({ playbooks: [{ id: 'bug', name: 'x', when: 'y', steps: ['one'] }] })));
 console.log('ok   --llm rewrite merges only wording and rejects bad replies');
+
+// Kit sources from the invented plugin files and skills folder in fixtures/claude.
+const claudeFixture = fileURLToPath(new URL('../fixtures/claude', import.meta.url));
+const sourced = withSources({
+  skills: [{ name: 'grill-me' }, { name: 'mattpocock-skills:grilling' }, { name: 'context-tools:lookup' }, { name: 'gone:x' }, { name: 'simplify' }, { name: '..' }],
+  mcp: [{ server: 'context7' }, { server: 'plugin_context_tools_docs' }, { server: 'plugin_other_srv' }],
+  agents: { share: 0, types: [], models: [] },
+}, claudeFixture, { home: '/home/demo', repoNames: ['secret-app'] });
+assert.deepEqual(sourced.skills.map((s) => s.source), [
+  { kind: 'personal', bundled: false },
+  { kind: 'plugin', plugin: 'mattpocock-skills', marketplace: 'mattpocock', repo: 'mattpocock/skills' },
+  { kind: 'plugin', plugin: 'context-tools', marketplace: 'acme-git', url: 'https://gitlab.com/acme/claude-plugins' },
+  { kind: 'plugin', plugin: 'gone' },
+  { kind: 'builtin' },
+  { kind: 'builtin' },
+]);
+assert.deepEqual(sourced.mcp.map((m) => m.source), [
+  { kind: 'personal' },
+  { kind: 'plugin', plugin: 'context-tools', marketplace: 'acme-git', url: 'https://gitlab.com/acme/claude-plugins' },
+  { kind: 'plugin', plugin: 'other' },
+]);
+// The bundle candidate: SKILL.md first, redacted, nothing ignored; no path, version or SHA anywhere.
+assert.deepEqual(sourced.skills[0].files.map((f) => f.path), ['SKILL.md', 'references/checklist.md']);
+assert.match(sourced.skills[0].files[0].text, /Keep notes in ‹path›/);
+assert.ok(!/home\/demo|1\.2\.0|0000000/.test(JSON.stringify(sourced)));
+// A private marketplace name stays out; the plugin is still named.
+assert.deepEqual(withSources({ skills: [{ name: 'mattpocock-skills:tdd' }], mcp: [] }, claudeFixture, { repoNames: ['mattpocock'] }).skills[0].source,
+  { kind: 'plugin', plugin: 'mattpocock-skills' });
+// Claude Code's own marketplace stays even when a repo part ("claude") is a private name to the redactor.
+assert.deepEqual(withSources({ skills: [{ name: 'code-review:review-pr' }], mcp: [] }, claudeFixture, { repoNames: ['claude-notes'] }).skills[0].source,
+  { kind: 'plugin', plugin: 'code-review', marketplace: 'claude-plugins-official', repo: 'anthropics/claude-plugins-official' });
+// No plugin files at all: plugin skills keep their plugin name, bare names are built in.
+assert.deepEqual(withSources({ skills: [{ name: 'a:b' }, { name: 'c' }], mcp: [] }, '/nonexistent').skills.map((s) => s.source), [{ kind: 'plugin', plugin: 'a' }, { kind: 'builtin' }]);
+// Skill folders that can't be bundled: over the cap, a binary file, no SKILL.md. Links and private file names are skipped.
+const sk = await mkdtemp(join(tmpdir(), 'loadout-skills-'));
+try {
+  const folder = async (name, files) => {
+    await mkdir(join(sk, name), { recursive: true });
+    for (const [f, body] of Object.entries(files)) await writeFile(join(sk, name, f), body);
+    return join(sk, name);
+  };
+  assert.equal(skillFiles(await folder('big', { 'SKILL.md': 'x'.repeat(MAX_SKILL_BYTES + 1) })), null);
+  assert.equal(skillFiles(await folder('bin', { 'SKILL.md': 'ok', 'logo.png': Buffer.from([137, 80, 0, 1]) })), null);
+  assert.equal(skillFiles(await folder('none', { 'notes.md': 'ok' })), null);
+  const ok = await folder('ok', { 'SKILL.md': 'Use it in secret-app.', 'secret-app.md': 'x' });
+  await symlink('/etc/hosts', join(ok, 'hosts'));
+  assert.deepEqual(skillFiles(ok, { repoNames: ['secret-app'] }), [{ path: 'SKILL.md', text: 'Use it in ‹name›.' }]);
+} finally {
+  await rm(sk, { recursive: true, force: true });
+}
+console.log('ok   kit sources: plugin and marketplace, built in or personal, and bundle candidates');
